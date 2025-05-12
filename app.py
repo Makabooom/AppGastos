@@ -29,45 +29,50 @@ with col1:
     mes = st.selectbox("Mes", list(range(1, 13)), index=today.month - 1)  # Selección del mes actual
 with col2:
     año = st.selectbox("Año", list(range(2024, 2031)), index=1)  # Selección del año
-
-# === Función genérica para mostrar y editar una hoja ===
 def mostrar_editor(nombre_hoja, columnas_dropdown=None):
     try:
-        df = read_sheet_as_df(sheet, nombre_hoja)  # Cargar la hoja seleccionada
+        # Cargar datos desde la hoja correspondiente
+        df = read_sheet_as_df(sheet, nombre_hoja)
     except:
         st.warning(f"No se pudo cargar la hoja '{nombre_hoja}'")
         return
 
-    tiene_mes_anio = "mes" in df.columns and "año" in df.columns  # Verifica si tiene filtro de fecha
+    # Verifica si la hoja contiene columnas 'mes' y 'año'
+    tiene_mes_anio = "mes" in df.columns and "año" in df.columns
 
+    # Filtra los datos según el mes y año seleccionados si corresponde
     if tiene_mes_anio:
-        df_filtrado = df[(df["mes"] == mes) & (df["año"] == año)].copy()  # Filtra por mes y año
+        df_filtrado = df[(df["mes"] == mes) & (df["año"] == año)].copy()
     else:
-        df_filtrado = df.copy()  # Si no tiene, muestra todo
+        df_filtrado = df.copy()
 
+    # Título de la subsección
     st.subheader(f"{nombre_hoja} ({mes}/{año})" if tiene_mes_anio else nombre_hoja)
 
-    # === Filtro por estado ===
+    # Si existe la columna 'estado', permite filtrar por ese estado
     if "estado" in df_filtrado.columns:
         estados = df_filtrado["estado"].dropna().unique().tolist()
         estado_filtrado = st.selectbox("Filtrar por estado:", ["Todos"] + estados, key=f"{nombre_hoja}_estado")
         if estado_filtrado != "Todos":
             df_filtrado = df_filtrado[df_filtrado["estado"] == estado_filtrado]
 
-    # === Mostrar totales si hay columna "monto" ===
+    # Si existe la columna 'monto', muestra el total de la vista filtrada
     if "monto" in df_filtrado.columns:
         total = df_filtrado["monto"].sum()
         st.markdown(f"💰 **Total monto:** ${total:,.0f}")
 
-    # === Agregar fila nueva ===
+    # Botón para agregar una nueva fila al editor
     if st.button("➕ Agregar fila nueva", key=f"add_{nombre_hoja}"):
-        nueva_fila = pd.DataFrame([{}], columns=df.columns)
         if tiene_mes_anio:
-            nueva_fila["mes"] = mes
-            nueva_fila["año"] = año
+            # Crear una fila con mes y año ya definidos
+            nueva_fila = pd.DataFrame([{"mes": mes, "año": año}], columns=df.columns)
+        else:
+            nueva_fila = pd.DataFrame([{}], columns=df.columns)
+
+        # Añadir la nueva fila al final del DataFrame filtrado
         df_filtrado = pd.concat([df_filtrado, nueva_fila], ignore_index=True)
 
-    # === Convertir a Selectbox si corresponde ===
+    # Reemplazar columnas por selectbox si se indicaron (ej: cuenta)
     if columnas_dropdown:
         for col in columnas_dropdown:
             if col in df_filtrado.columns:
@@ -75,7 +80,7 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
                     lambda x: x if x in lista_cuentas else (lista_cuentas[0] if lista_cuentas else "")
                 )
 
-    # === Editor interactivo ===
+    # Editor de datos dinámico
     edited_df = st.data_editor(
         df_filtrado,
         num_rows="dynamic",
@@ -86,15 +91,22 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
         }
     )
 
-    # === Guardar cambios ===
-    if st.button(f"📂 Guardar cambios en {nombre_hoja}", key=f"save_{nombre_hoja}"):
+    # Botón para guardar los cambios editados
+    if st.button(f"💾 Guardar cambios en {nombre_hoja}", key=f"save_{nombre_hoja}"):
         if tiene_mes_anio:
+            # Asegura que todas las filas tengan mes y año
             edited_df["mes"] = edited_df["mes"].fillna(mes).astype(int)
             edited_df["año"] = edited_df["año"].fillna(año).astype(int)
+
+            # Elimina del original lo que corresponde a ese mes/año
             df_sin_filtro = df[~((df["mes"] == mes) & (df["año"] == año))]
+
+            # Concatena los datos nuevos editados con el resto de la tabla
             df_final = pd.concat([df_sin_filtro, edited_df], ignore_index=True)
         else:
             df_final = edited_df
+
+        # Escribe el nuevo contenido completo en la hoja
         write_df_to_sheet(sheet, nombre_hoja, df_final)
         st.success(f"{nombre_hoja} actualizado correctamente!")
 
