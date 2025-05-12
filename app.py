@@ -6,10 +6,10 @@ import datetime
 
 # Configuración
 SHEET_KEY = "1OPCAwKXoEHBmagpvkhntywqkAit7178pZv3ptXd9d9w"  # tu archivo en Drive
-JSON_KEYFILE = "credentials.json"
+credentials_secret = st.secrets["credentials"]
 
 # Conectar
-sheet = connect_to_sheet(JSON_KEYFILE, SHEET_KEY)
+sheet = connect_to_sheet(credentials_secret, SHEET_KEY)
 
 # Elegir mes/año
 st.title("🧾 Control de Ingresos")

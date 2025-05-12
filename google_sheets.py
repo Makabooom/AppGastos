@@ -6,8 +6,8 @@ import pandas as pd
 # Definir el alcance para Google Sheets
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
-def connect_to_sheet(json_keyfile, sheet_key):
-    credentials = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile, scope)
+def connect_to_sheet(secret_dict, sheet_key):
+    credentials = ServiceAccountCredentials.from_json_keyfile_dict(secret_dict, scope)
     client = gspread.authorize(credentials)
     sheet = client.open_by_key(sheet_key)
     return sheet
