@@ -20,14 +20,14 @@ if not st.session_state.acceso_autorizado:
     pin_ingresado = st.text_input("Ingresa tu PIN:", type="password")
 
     if st.button("🔓 Ingresar"):
-    if pin_ingresado == st.secrets["security"]["pin"]:
-        st.session_state.acceso_autorizado = True
-        st.success("Acceso concedido. Bienvenida 👋")
-    else:
-        st.error("PIN incorrecto.")
+        if pin_ingresado == st.secrets["security"]["pin"]:
+            st.session_state.acceso_autorizado = True
+            st.success("Acceso concedido. Bienvenida 👋")
+        else:
+            st.error("PIN incorrecto.")
 
     if not st.session_state.acceso_autorizado:
-    st.stop()  # Detener ejecución si no está autorizada
+        st.stop()  # Detener ejecución si no está autorizada
 
 # === Conectarse al Google Sheet usando credenciales seguras ===
 SHEET_KEY = "1OPCAwKXoEHBmagpvkhntywqkAit7178pZv3ptXd9d9w"  # ID del documento en Google Sheets
