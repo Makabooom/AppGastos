@@ -11,6 +11,10 @@ import matplotlib.pyplot as plt                 # Para generar gráficos
 from google_sheets import connect_to_sheet, read_sheet_as_df, write_df_to_sheet  # Módulo de Google Sheets personalizado
 from io import BytesIO
 
+
+# Mostrar banner Makaboom
+st.image("banner_makaboom.png", use_column_width=True)
+
 # === Validación de PIN de acceso ===
 if "acceso_autorizado" not in st.session_state:
     st.session_state.acceso_autorizado = False
@@ -244,7 +248,7 @@ def generar_excel_resumen(mes, año, resumen, df_gas, df_aho, df_prov, df_deu, d
 
     except Exception as e:
         st.error("No se pudo generar el calendario de pagos.")
-        
+
     # === Timeline visual de pagos con colores y línea de hoy ===
     st.markdown("### 📅 Visualización de pagos del mes")
 
@@ -457,7 +461,6 @@ df_evo_aho = agrupar(df_aho, "monto_ingreso", "Ahorros")
 
 # Unir todas las tablas
 from functools import reduce
-st.image("banner_makaboom.png", use_column_width=True)
 
 frames = [df_evo_ing, df_evo_gas, df_evo_deu, df_evo_prov, df_evo_aho]
 df_evolucion = reduce(lambda left, right: pd.merge(left, right, on=["año", "mes"], how="outer"), frames)
