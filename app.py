@@ -27,8 +27,6 @@ if not st.session_state.acceso_autorizado:
             if pin_ingresado == st.secrets["security"]["pin"]:
                 st.session_state.acceso_autorizado = True
                 st.success("Acceso concedido. Bienvenida 👋")
-            else:
-                st.error("PIN incorrecto.")
 
     if not st.session_state.acceso_autorizado:
         st.stop()
@@ -50,14 +48,6 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
                     st.warning("No hay datos del mes anterior.")
                 elif not df_actual.empty:
                     st.warning("Ya existen datos para este mes.")
-                else:
-                    df_copia = df_anterior.copy()
-                    df_copia["mes"] = mes
-                    df_copia["año"] = año
-                    df = pd.concat([df, df_copia], ignore_index=True)
-                    write_df_to_sheet(sheet, nombre_hoja, df)
-                    st.success("Datos copiados correctamente desde el mes anterior.")
-                    st.stop()
 
         # Configurar listas desplegables Sí/No
         column_config = {}
@@ -123,8 +113,6 @@ with tabs[2]:
 
     # Verifica si tiene columnas 'mes' y 'año'
     # Filtra por mes y año actual si corresponde
-    else:
-        df_filtrado = df.copy()
 
     st.subheader(f"{nombre_hoja} ({mes}/{año})" if tiene_mes_anio else nombre_hoja)
 
@@ -195,8 +183,6 @@ with tabs[2]:
             edited_df["año"] = año
             df_sin_filtro = df[~((df["mes"] == mes) & (df["año"] == año))]
             df_final = pd.concat([df_sin_filtro, edited_df], ignore_index=True)
-        else:
-            df_final = edited_df
 
         # Si se paga con provisión, actualizar en hoja Provisiones
         if "tipo_pago" in edited_df.columns and "cuenta_pago" in edited_df.columns:
@@ -213,11 +199,6 @@ with tabs[2]:
                             usado = fila["monto"] if nombre_hoja == "Gastos Fijos" else fila.get("monto_cuota", 0)
                             df_prov.at[idx, "monto_usado"] = usado
                             write_df_to_sheet(sheet, "Provisiones", df_prov)
-                        else:
-                            st.warning(f"No se encontró provisión para '{fila['nombre']}' en {mes}/{año}")
-        
-        write_df_to_sheet(sheet, nombre_hoja, df_final)
-        st.success(f"{nombre_hoja} actualizado correctamente.")
 
         # Resetear checkbox
         st.session_state[f"confirm_{nombre_hoja}"] = False
@@ -314,8 +295,6 @@ def generar_excel_resumen(mes, año, resumen, df_gas, df_aho, df_prov, df_deu, d
                     return "deuda"
                 elif "💡" in desc:
                     return "gasto"
-                else:
-                    return "otro"
 
             df_calendario["tipo"] = df_calendario["Descripción"].apply(detectar_tipo)
             df_calendario.sort_values("Día", inplace=True)
@@ -343,20 +322,6 @@ def generar_excel_resumen(mes, año, resumen, df_gas, df_aho, df_prov, df_deu, d
                 ax.legend()
 
             st.pyplot(fig)
-        else:
-            st.info("No hay datos para mostrar en el timeline.")
-    except Exception as e:
-        st.error("Error al generar el gráfico de timeline.")
-            
-    # Agregar gráfico de torta si hay valores
-    egresos = resumen[1:]
-    chart = PieChart()
-    labels = Reference(ws, min_col=1, min_row=5, max_row=8)
-    data = Reference(ws, min_col=2, min_row=5, max_row=8)
-    chart.add_data(data, titles_from_data=False)
-    chart.set_categories(labels)
-    chart.title = "Distribución de Egresos"
-    ws.add_chart(chart, "D10")
 
     # Agregar cada hoja de datos
     for nombre, df in [("Gastos", df_gas), ("Ahorros", df_aho), ("Provisiones", df_prov), ("Deudas", df_deu), ("Ingresos", df_ing)]:
@@ -433,10 +398,6 @@ with st.expander("📊 Ver resumen del mes actual", expanded=True):
             if limite is not None:
                 if real > limite:
                     st.error(f"🚨 Te pasaste en **{cat}**: gastaste ${real:,.0f} (límite ${limite:,.0f})")
-                else:
-                    st.success(f"✅ {cat}: dentro del presupuesto (${real:,.0f} / ${limite:,.0f})")
-            else:
-                st.info(f"ℹ️ No hay presupuesto definido para **{cat}**")
 
     except Exception as e:
         st.warning("No se pudo cargar o procesar la hoja 'Presupuestos'. Revísala en Google Sheets.")
@@ -482,8 +443,6 @@ st.subheader("📈 Evolución mensual (últimos 12 meses)")
 def agrupar(df, campo, nombre):
     if campo in df.columns:
         return df.groupby(["año", "mes"])[campo].sum().reset_index(name=nombre)
-    else:
-        return pd.DataFrame(columns=["año", "mes", nombre])
 
 # Función para generar el histórico
 def generar_excel_historico(anio, hojas_dict):
@@ -635,8 +594,6 @@ try:
         ax.pie(top_gastos.values, labels=top_gastos.index, autopct="%1.1f%%", startangle=90)
         ax.axis("equal")
         st.pyplot(fig)
-    else:
-        st.info("No hay gastos registrados para este mes.")
 except Exception as e:
     st.error("No se pudo generar el análisis por categoría.")        
 
@@ -662,8 +619,6 @@ try:
         ax.pie(top_prov.values, labels=top_prov.index, autopct="%1.1f%%", startangle=90)
         ax.axis("equal")
         st.pyplot(fig)
-    else:
-        st.info("No hay provisiones usadas para este mes.")
 except Exception as e:
     st.error("No se pudo generar el análisis de provisiones.")
 
