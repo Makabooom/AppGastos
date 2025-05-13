@@ -9,6 +9,7 @@ import pandas as pd                             # Para manejo de datos y estruct
 import datetime                                 # Para trabajar con fechas
 import matplotlib.pyplot as plt                 # Para generar gráficos
 from google_sheets import connect_to_sheet, read_sheet_as_df, write_df_to_sheet  # Módulo de Google Sheets personalizado
+from io import BytesIO
 
 # === Conectarse al Google Sheet usando credenciales seguras ===
 SHEET_KEY = "1OPCAwKXoEHBmagpvkhntywqkAit7178pZv3ptXd9d9w"  # ID del documento en Google Sheets
@@ -56,9 +57,6 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
     except:
         st.warning(f"No se pudo cargar la hoja '{nombre_hoja}'")
         return
-
-   
-
 
     # Verifica si tiene columnas 'mes' y 'año'
     tiene_mes_anio = "mes" in df.columns and "año" in df.columns
@@ -151,6 +149,68 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
         # Resetear checkbox
         st.session_state[f"confirm_{nombre_hoja}"] = False
 
+from io import BytesIO
+
+def generar_excel_resumen(mes, año, resumen, df_gas, df_aho, df_prov, df_deu, df_ing):
+    from openpyxl import Workbook
+    from openpyxl.chart import PieChart, Reference
+    from openpyxl.utils.dataframe import dataframe_to_rows
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Resumen"
+
+    # Escribir resumen
+    ws.append(["Resumen financiero", f"{mes}/{año}"])
+    ws.append([])
+    for item in resumen:
+        ws.append(item)
+
+    ws.append([])
+    ws.append(["Detalle de Egresos"])
+
+    # === Exportar resumen ===
+    st.markdown("### 📤 Exportar resumen mensual")
+
+    resumen = [
+        ["Total Ingresos", total_ingresos],
+        ["Total Gastos Fijos", total_gastos],
+        ["Total Deudas", total_deudas],
+        ["Total Provisiones usadas", total_provisiones],
+        ["Total Ahorros", total_ahorros],
+        ["Saldo estimado", saldo]
+    ]
+
+    excel_bytes = generar_excel_resumen(mes, año, resumen, df_gas, df_aho, df_prov, df_deu, df_ing)
+
+    st.download_button(
+        label="📥 Descargar resumen en Excel",
+        data=excel_bytes,
+        file_name=f"Resumen_{mes}_{año}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+    # Agregar gráfico de torta si hay valores
+    egresos = resumen[1:]
+    chart = PieChart()
+    labels = Reference(ws, min_col=1, min_row=5, max_row=8)
+    data = Reference(ws, min_col=2, min_row=5, max_row=8)
+    chart.add_data(data, titles_from_data=False)
+    chart.set_categories(labels)
+    chart.title = "Distribución de Egresos"
+    ws.add_chart(chart, "D10")
+
+    # Agregar cada hoja de datos
+    for nombre, df in [("Gastos", df_gas), ("Ahorros", df_aho), ("Provisiones", df_prov), ("Deudas", df_deu), ("Ingresos", df_ing)]:
+        ws2 = wb.create_sheet(title=nombre)
+        for r in dataframe_to_rows(df, index=False, header=True):
+            ws2.append(r)
+
+    # Exportar como BytesIO
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return output
 
 
 # === Resumen financiero del mes ===
@@ -267,6 +327,24 @@ def agrupar(df, campo, nombre):
     else:
         return pd.DataFrame(columns=["año", "mes", nombre])
 
+# Función para generar el histórico
+def generar_excel_historico(anio, hojas_dict):
+    from openpyxl import Workbook
+    from openpyxl.utils.dataframe import dataframe_to_rows
+    output = BytesIO()
+    wb = Workbook()
+    wb.remove(wb.active)
+
+    for nombre, df in hojas_dict.items():
+        df_filtrado = df[df["año"] == anio] if "año" in df.columns else df
+        ws = wb.create_sheet(title=nombre)
+        for r in dataframe_to_rows(df_filtrado, index=False, header=True):
+            ws.append(r)
+
+    wb.save(output)
+    output.seek(0)
+    return output
+
 # Agrupar cada categoría
 df_evo_ing = agrupar(df_ing, "monto", "Ingresos")
 df_evo_gas = agrupar(df_gas, "monto", "Gastos")
@@ -310,6 +388,27 @@ with tabs[2]: mostrar_editor("Gastos Fijos", columnas_dropdown=["cuenta_pago"])
 with tabs[3]: mostrar_editor("Ahorros", columnas_dropdown=["cuenta"])
 with tabs[4]: mostrar_editor("Reservas Familiares", columnas_dropdown=["cuenta"])
 with tabs[5]: mostrar_editor("Deudas")
+
+# === Exportar histórico del año ===
+st.markdown("## 📦 Descargar histórico anual")
+
+todas_hojas = {
+    "Ingresos": read_sheet_as_df(sheet, "Ingresos"),
+    "Gastos Fijos": read_sheet_as_df(sheet, "Gastos Fijos"),
+    "Provisiones": read_sheet_as_df(sheet, "Provisiones"),
+    "Ahorros": read_sheet_as_df(sheet, "Ahorros"),
+    "Deudas": read_sheet_as_df(sheet, "Deudas"),
+    "Reservas Familiares": read_sheet_as_df(sheet, "Reservas Familiares")
+}
+
+archivo_historico = generar_excel_historico(año, todas_hojas)
+
+st.download_button(
+    label="📥 Descargar histórico anual",
+    data=archivo_historico,
+    file_name=f"Historico_{año}.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
 
 # === TAB EXTRA PARA CONFIGURAR CUENTAS ===
 tabs.append("Configuración de Cuentas")
