@@ -112,6 +112,23 @@ with tabs[2]:
     st.header("📈 Reportes y Análisis")
     st.write("Aquí se mostrarán gráficos por categoría, evolución mensual, top gastos, etc.")
 
+    try:
+        df = read_sheet_as_df(sheet, "Gastos")
+        tiene_mes_anio = "mes" in df.columns and "año" in df.columns
+        df_filtrado = df[(df["mes"] == mes) & (df["año"] == año)] if tiene_mes_anio else df.copy()
+
+        if "monto" in df_filtrado.columns:
+            total = df_filtrado["monto"].sum()
+            st.markdown(f"💰 **Total monto:** ${total:,.0f}")
+
+        columnas_ocultas = ["mes", "año"]
+        columnas_visibles = [c for c in df_filtrado.columns if c not in columnas_ocultas]
+
+        st.dataframe(df_filtrado[columnas_visibles])
+
+    except:
+        st.warning("No se pudieron cargar los datos para generar el reporte.")
+
     # Verifica si tiene columnas 'mes' y 'año'
     # Filtra por mes y año actual si corresponde
 
