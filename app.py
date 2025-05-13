@@ -91,6 +91,8 @@ try:
     df_cuentas = read_sheet_as_df(sheet, "Cuentas")
     lista_cuentas = df_cuentas["nombre_cuenta"].dropna().unique().tolist()
 except:
+    lista_cuentas = []
+except:
     lista_cuentas = [] df_cuentas["nombre_cuenta"].dropna().unique().tolist()  # Lista desplegable
 except:
     lista_cuentas = []  # Si falla, dejar la lista vacía
