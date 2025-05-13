@@ -51,8 +51,10 @@ sheet = connect_to_sheet(st.secrets["credentials"], SHEET_KEY)  # Conexión aute
 
 # === Leer lista de cuentas bancarias desde la hoja "Cuentas" ===
 try:
-    df_cuentas = read_sheet_as_df(sheet, "Cuentas")  # Obtener la hoja
-    lista_cuentas = df_cuentas["nombre_cuenta"].dropna().unique().tolist()  # Lista desplegable
+    df_cuentas = read_sheet_as_df(sheet, "Cuentas")
+    lista_cuentas = df_cuentas["nombre_cuenta"].dropna().unique().tolist()
+except:
+    lista_cuentas = [] df_cuentas["nombre_cuenta"].dropna().unique().tolist()  # Lista desplegable
 except:
     lista_cuentas = []  # Si falla, dejar la lista vacía
 
