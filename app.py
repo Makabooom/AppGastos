@@ -34,9 +34,31 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
     try:
         # Leer la hoja desde Google Sheets
         df = read_sheet_as_df(sheet, nombre_hoja)
+         # === COPIAR DATOS DEL MES ANTERIOR (opcional por hoja) ===
+        if nombre_hoja in ["Gastos Fijos", "Provisiones", "Ahorros"]:
+            if st.button("📋 Copiar desde el mes anterior", key=f"copiar_{nombre_hoja}"):
+                # Determinar mes y año anterior
+                mes_anterior = mes - 1 if mes > 1 else 12
+                año_anterior = año if mes > 1 else año - 1
+
+                # Filtrar datos del mes anterior
+                if tiene_mes_anio:
+                    df_prev = df[(df["mes"] == mes_anterior) & (df["año"] == año_anterior)].copy()
+
+                    # Reemplazar a mes actual
+                    df_prev["mes"] = mes
+                    df_prev["año"] = año
+
+                    # Añadir las filas al DataFrame actual
+                    df_filtrado = pd.concat([df_filtrado, df_prev], ignore_index=True)
+
+                    st.success(f"Se copiaron {len(df_prev)} registros desde {mes_anterior}/{año_anterior}.")
     except:
         st.warning(f"No se pudo cargar la hoja '{nombre_hoja}'")
         return
+
+   
+
 
     # Verifica si tiene columnas 'mes' y 'año'
     tiene_mes_anio = "mes" in df.columns and "año" in df.columns
@@ -81,22 +103,54 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
         }
     )
 
-    # Al guardar, completar automáticamente mes y año si es necesario
+    # === GUARDAR CON VALIDACIÓN Y CONFIRMACIÓN ===
+    if f"confirm_{nombre_hoja}" not in st.session_state:
+        st.session_state[f"confirm_{nombre_hoja}"] = False
+
+    # Mostrar casilla de confirmación
+    confirmar = st.checkbox("✅ Confirmo que deseo guardar los cambios", key=f"confirm_{nombre_hoja}")
+    
     if st.button(f"💾 Guardar cambios en {nombre_hoja}", key=f"save_{nombre_hoja}"):
+
+        # VALIDACIONES
+        errores = []
+
+        if "monto" in edited_df.columns:
+            if not pd.to_numeric(edited_df["monto"], errors="coerce").notna().all():
+                errores.append("Hay valores no numéricos en la columna 'monto'.")
+            elif (edited_df["monto"] < 0).any():
+                errores.append("Hay montos negativos en la columna 'monto'.")
+
+        for col in ["cuenta", "cuenta_pago"]:
+            if col in edited_df.columns:
+                if not edited_df[col].isin(lista_cuentas).all():
+                    errores.append(f"Hay cuentas no válidas en la columna '{col}'.")
+
+        if errores:
+            for err in errores:
+                st.error(f"🛑 {err}")
+            return
+
+        if not confirmar:
+            st.info("Marca la casilla para confirmar antes de guardar.")
+            return
+
+        # COMPLETAR MES Y AÑO
         if tiene_mes_anio:
-            # Agrega mes y año al DataFrame editado antes de guardar
             edited_df["mes"] = mes
             edited_df["año"] = año
-
-            # Quita lo anterior para ese mes/año y reemplaza por el nuevo
             df_sin_filtro = df[~((df["mes"] == mes) & (df["año"] == año))]
             df_final = pd.concat([df_sin_filtro, edited_df], ignore_index=True)
         else:
             df_final = edited_df
 
-        # Guarda en la hoja
+        # GUARDAR
         write_df_to_sheet(sheet, nombre_hoja, df_final)
-        st.success(f"{nombre_hoja} actualizado correctamente!")
+        st.success(f"{nombre_hoja} actualizado correctamente.")
+
+        # Resetear checkbox
+        st.session_state[f"confirm_{nombre_hoja}"] = False
+
 
 
 # === Resumen financiero del mes ===
@@ -138,6 +192,38 @@ with st.expander("📊 Ver resumen del mes actual", expanded=True):
         st.metric("🟡 Ahorros realizados", f"${total_ahorros:,.0f}")
         st.metric("🟢💰 Saldo estimado", f"${saldo:,.0f}")
 
+    # === ALERTAS DE PRESUPUESTO ===
+    st.markdown("### 🔔 Alertas de Presupuesto")
+
+    try:
+        # Leer hoja Presupuestos
+        df_presup = read_sheet_as_df(sheet, "Presupuestos")
+        df_presup = df_presup[(df_presup["mes"] == mes) & (df_presup["año"] == año)]
+
+        # Crear diccionario con límites definidos
+        presupuestos = dict(zip(df_presup["categoria"], df_presup["monto_maximo"]))
+
+        # Comparar con montos reales
+        comparaciones = {
+            "Gastos Fijos": total_gastos,
+            "Provisiones": total_provisiones,
+            "Ahorros": total_ahorros
+        }
+
+        for cat, real in comparaciones.items():
+            limite = presupuestos.get(cat)
+            if limite is not None:
+                if real > limite:
+                    st.error(f"🚨 Te pasaste en **{cat}**: gastaste ${real:,.0f} (límite ${limite:,.0f})")
+                else:
+                    st.success(f"✅ {cat}: dentro del presupuesto (${real:,.0f} / ${limite:,.0f})")
+            else:
+                st.info(f"ℹ️ No hay presupuesto definido para **{cat}**")
+
+    except Exception as e:
+        st.warning("No se pudo cargar o procesar la hoja 'Presupuestos'. Revísala en Google Sheets.")
+
+
     # === Gráfico de torta con distribución de egresos ===
     egresos = {
         "Gastos": total_gastos,
@@ -149,6 +235,27 @@ with st.expander("📊 Ver resumen del mes actual", expanded=True):
     ax.pie(egresos.values(), labels=egresos.keys(), autopct="%1.1f%%", startangle=90)
     ax.axis("equal")  # Hacerlo circular
     st.pyplot(fig)
+
+    # === ALERTAS AUTOMÁTICAS ===
+    st.markdown("### 🚨 Alertas automáticas")
+
+    # Alertas en Provisiones
+    prov_alertas = df_prov[df_prov["total_acumulado"] == 0] if "total_acumulado" in df_prov.columns else pd.DataFrame()
+    if not prov_alertas.empty:
+        for i, row in prov_alertas.iterrows():
+            st.error(f"⚠️ Provisión sin fondo: **{row['nombre']}** tiene $0 disponible.")
+
+    # Alertas en Gastos Fijos pendientes
+    gastos_pend = df_gas[df_gas["estado"].str.lower() == "pendiente"] if "estado" in df_gas.columns else pd.DataFrame()
+    if not gastos_pend.empty:
+        for i, row in gastos_pend.iterrows():
+            st.warning(f"🕒 Gasto pendiente: **{row['nombre']}** por ${row['monto']:,.0f} no ha sido pagado.")
+
+    # Alertas en Deudas no pagadas (cuotas_mes = 0)
+    deudas_sin_pago = df_deu[df_deu["cuotas_mes"] == 0] if "cuotas_mes" in df_deu.columns else pd.DataFrame()
+    if not deudas_sin_pago.empty:
+        for i, row in deudas_sin_pago.iterrows():
+            st.warning(f"📌 Deuda sin pago este mes: **{row['descripcion']}** - cuota ${row['monto_cuota']:,.0f}")
 
 # === Gráfico de evolución mensual ===
 st.subheader("📈 Evolución mensual (últimos 12 meses)")
@@ -203,3 +310,49 @@ with tabs[2]: mostrar_editor("Gastos Fijos", columnas_dropdown=["cuenta_pago"])
 with tabs[3]: mostrar_editor("Ahorros", columnas_dropdown=["cuenta"])
 with tabs[4]: mostrar_editor("Reservas Familiares", columnas_dropdown=["cuenta"])
 with tabs[5]: mostrar_editor("Deudas")
+
+# === TAB EXTRA PARA CONFIGURAR CUENTAS ===
+tabs.append("Configuración de Cuentas")
+
+with tabs[-1]:
+    st.subheader("⚙️ Configuración de Cuentas")
+
+    try:
+        df_cuentas = read_sheet_as_df(sheet, "Cuentas")  # Releer por si hubo cambios
+    except:
+        df_cuentas = pd.DataFrame(columns=["nombre_cuenta", "banco", "tipo_cuenta"])
+
+    # Editor interactivo
+    edited_cuentas = st.data_editor(
+        df_cuentas,
+        num_rows="dynamic",
+        use_container_width=True
+    )
+
+    # Guardar cambios
+    if st.button("💾 Guardar cambios en cuentas"):
+        write_df_to_sheet(sheet, "Cuentas", edited_cuentas)
+        st.success("Cuentas actualizadas correctamente.")
+
+# === TAB EXTRA PARA PRESUPUESTOS MENSUALES ===
+tabs.append("Presupuestos Mensuales")
+
+with tabs[-1]:
+    st.subheader("💰 Presupuestos por Categoría")
+
+    try:
+        df_presup = read_sheet_as_df(sheet, "Presupuestos")
+    except:
+        df_presup = pd.DataFrame(columns=["categoria", "monto_maximo", "mes", "año"])
+
+    # Editor de presupuestos
+    edited_presup = st.data_editor(
+        df_presup,
+        num_rows="dynamic",
+        use_container_width=True
+    )
+
+    # Guardar cambios
+    if st.button("💾 Guardar presupuestos"):
+        write_df_to_sheet(sheet, "Presupuestos", edited_presup)
+        st.success("Presupuestos actualizados correctamente.")        
