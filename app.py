@@ -117,11 +117,6 @@ with tabs[2]:
 
 
     # Filtro por estado (si existe la columna)
-    if "estado" in df_filtrado.columns:
-        estados = df_filtrado["estado"].dropna().unique().tolist()
-        estado_filtrado = st.selectbox("Filtrar por estado:", ["Todos"] + estados, key=f"{nombre_hoja}_estado")
-        if estado_filtrado != "Todos":
-            df_filtrado = df_filtrado[df_filtrado["estado"] == estado_filtrado]
 
     # Mostrar total si hay columna 'monto'
     if "monto" in df_filtrado.columns:
