@@ -396,7 +396,8 @@ st.pyplot(fig)
 # === Tabs principales del sistema ===
 tabs = st.tabs([
     "Ingresos", "Provisiones", "Gastos Fijos",
-    "Ahorros", "Reservas Familiares", "Deudas"
+    "Ahorros", "Reservas Familiares", "Deudas",
+    "Configuración de Cuentas", "Presupuestos Mensuales"
 ])
 
 # Mostrar cada pestaña con sus opciones correspondientes
@@ -406,6 +407,44 @@ with tabs[2]: mostrar_editor("Gastos Fijos", columnas_dropdown=["cuenta_pago"])
 with tabs[3]: mostrar_editor("Ahorros", columnas_dropdown=["cuenta"])
 with tabs[4]: mostrar_editor("Reservas Familiares", columnas_dropdown=["cuenta"])
 with tabs[5]: mostrar_editor("Deudas")
+
+# === TAB 6: Configuración de Cuentas ===
+with tabs[6]:
+    st.subheader("⚙️ Configuración de Cuentas")
+
+    try:
+        df_cuentas = read_sheet_as_df(sheet, "Cuentas")
+    except:
+        df_cuentas = pd.DataFrame(columns=["nombre_cuenta", "banco", "tipo_cuenta"])
+
+    edited_cuentas = st.data_editor(
+        df_cuentas,
+        num_rows="dynamic",
+        use_container_width=True
+    )
+
+    if st.button("💾 Guardar cambios en cuentas"):
+        write_df_to_sheet(sheet, "Cuentas", edited_cuentas)
+        st.success("Cuentas actualizadas correctamente.")
+
+# === TAB 7: Presupuestos Mensuales ===
+with tabs[7]:
+    st.subheader("💰 Presupuestos por Categoría")
+
+    try:
+        df_presup = read_sheet_as_df(sheet, "Presupuestos")
+    except:
+        df_presup = pd.DataFrame(columns=["categoria", "monto_maximo", "mes", "año"])
+
+    edited_presup = st.data_editor(
+        df_presup,
+        num_rows="dynamic",
+        use_container_width=True
+    )
+
+    if st.button("💾 Guardar presupuestos"):
+        write_df_to_sheet(sheet, "Presupuestos", edited_presup)
+        st.success("Presupuestos actualizados correctamente.")
 
 # === Exportar histórico del año ===
 st.markdown("## 📦 Descargar histórico anual")
@@ -428,51 +467,6 @@ st.download_button(
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
 
-# === TAB EXTRA PARA CONFIGURAR CUENTAS ===
-tabs.append("Configuración de Cuentas")
-
-with tabs[-1]:
-    st.subheader("⚙️ Configuración de Cuentas")
-
-    try:
-        df_cuentas = read_sheet_as_df(sheet, "Cuentas")  # Releer por si hubo cambios
-    except:
-        df_cuentas = pd.DataFrame(columns=["nombre_cuenta", "banco", "tipo_cuenta"])
-
-    # Editor interactivo
-    edited_cuentas = st.data_editor(
-        df_cuentas,
-        num_rows="dynamic",
-        use_container_width=True
-    )
-
-    # Guardar cambios
-    if st.button("💾 Guardar cambios en cuentas"):
-        write_df_to_sheet(sheet, "Cuentas", edited_cuentas)
-        st.success("Cuentas actualizadas correctamente.")
-
-# === TAB EXTRA PARA PRESUPUESTOS MENSUALES ===
-tabs.append("Presupuestos Mensuales")
-
-with tabs[-1]:
-    st.subheader("💰 Presupuestos por Categoría")
-
-    try:
-        df_presup = read_sheet_as_df(sheet, "Presupuestos")
-    except:
-        df_presup = pd.DataFrame(columns=["categoria", "monto_maximo", "mes", "año"])
-
-    # Editor de presupuestos
-    edited_presup = st.data_editor(
-        df_presup,
-        num_rows="dynamic",
-        use_container_width=True
-    )
-
-    # Guardar cambios
-    if st.button("💾 Guardar presupuestos"):
-        write_df_to_sheet(sheet, "Presupuestos", edited_presup)
-        st.success("Presupuestos actualizados correctamente.")        
 
 # === Análisis por categoría (Top 5 gastos) ===
 st.markdown("## 📊 Análisis por categoría: Top 5 gastos fijos")
