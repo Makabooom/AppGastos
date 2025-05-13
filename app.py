@@ -190,11 +190,9 @@ with tabs[2]:
         if errores:
             for err in errores:
                 st.error(f"🛑 {err}")
-            return
 
         if not confirmar:
             st.info("Marca la casilla para confirmar antes de guardar.")
-            return
 
         # COMPLETAR MES Y AÑO
         if tiene_mes_anio:
