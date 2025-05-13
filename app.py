@@ -85,7 +85,7 @@ except:
     lista_cuentas = []  # Si falla, dejar la lista vacía
 
 # === Selección centralizada de mes y año ===
-st.title("📋 Control Financiero Personal")
+# título movido después de login
 
 # === Tabs principales ===
 tabs = st.tabs(["📊 Resumen", "📋 Datos", "📈 Reportes"])
@@ -115,7 +115,6 @@ with tabs[2]:
     # Verifica si tiene columnas 'mes' y 'año'
     # Filtra por mes y año actual si corresponde
 
-    st.subheader(f"{nombre_hoja} ({mes}/{año})" if tiene_mes_anio else nombre_hoja)
 
     # Filtro por estado (si existe la columna)
     if "estado" in df_filtrado.columns:
