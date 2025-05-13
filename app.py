@@ -117,9 +117,6 @@ with tabs[2]:
         tiene_mes_anio = "mes" in df.columns and "año" in df.columns
         df_filtrado = df[(df["mes"] == mes) & (df["año"] == año)] if tiene_mes_anio else df.copy()
 
-        if "monto" in df_filtrado.columns:
-            total = df_filtrado["monto"].sum()
-            st.markdown(f"💰 **Total monto:** ${total:,.0f}")
 
         columnas_ocultas = ["mes", "año"]
         columnas_visibles = [c for c in df_filtrado.columns if c not in columnas_ocultas]
@@ -136,9 +133,6 @@ with tabs[2]:
     # Filtro por estado (si existe la columna)
 
     # Mostrar total si hay columna 'monto'
-    if "monto" in df_filtrado.columns:
-        total = df_filtrado["monto"].sum()
-        st.markdown(f"💰 **Total monto:** ${total:,.0f}")
 
     # Botón para agregar una nueva fila vacía
     if st.button("➕ Agregar fila nueva", key=f"add_{nombre_hoja}"):
