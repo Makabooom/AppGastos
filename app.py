@@ -11,6 +11,24 @@ import matplotlib.pyplot as plt                 # Para generar gráficos
 from google_sheets import connect_to_sheet, read_sheet_as_df, write_df_to_sheet  # Módulo de Google Sheets personalizado
 from io import BytesIO
 
+# === Validación de PIN de acceso ===
+if "acceso_autorizado" not in st.session_state:
+    st.session_state.acceso_autorizado = False
+
+if not st.session_state.acceso_autorizado:
+    st.title("🔐 Acceso protegido")
+    pin_ingresado = st.text_input("Ingresa tu PIN:", type="password")
+
+    if st.button("🔓 Ingresar"):
+        if pin_ingresado == st.secrets["security"]["pin"]:
+            st.session_state.acceso_autorizado = True
+            st.success("Acceso concedido. Bienvenida 👋")
+            st.experimental_rerun()
+        else:
+            st.error("PIN incorrecto.")
+
+    st.stop()  # Detener ejecución si no está autorizada
+    
 # === Conectarse al Google Sheet usando credenciales seguras ===
 SHEET_KEY = "1OPCAwKXoEHBmagpvkhntywqkAit7178pZv3ptXd9d9w"  # ID del documento en Google Sheets
 sheet = connect_to_sheet(st.secrets["credentials"], SHEET_KEY)  # Conexión autenticada
@@ -455,3 +473,103 @@ with tabs[-1]:
     if st.button("💾 Guardar presupuestos"):
         write_df_to_sheet(sheet, "Presupuestos", edited_presup)
         st.success("Presupuestos actualizados correctamente.")        
+
+# === Análisis por categoría (Top 5 gastos) ===
+st.markdown("## 📊 Análisis por categoría: Top 5 gastos fijos")
+
+try:
+    df_gastos_mes = df_gas[(df_gas["mes"] == mes) & (df_gas["año"] == año)]
+
+    if not df_gastos_mes.empty:
+        top_gastos = (
+            df_gastos_mes.groupby("nombre")["monto"]
+            .sum()
+            .sort_values(ascending=False)
+            .head(5)
+        )
+
+        # Mostrar tabla
+        st.table(top_gastos.reset_index().rename(columns={"monto": "Total"}))
+
+        # Gráfico de torta
+        fig, ax = plt.subplots()
+        ax.pie(top_gastos.values, labels=top_gastos.index, autopct="%1.1f%%", startangle=90)
+        ax.axis("equal")
+        st.pyplot(fig)
+    else:
+        st.info("No hay gastos registrados para este mes.")
+except Exception as e:
+    st.error("No se pudo generar el análisis por categoría.")        
+
+# === Análisis por categoría: Top 5 provisiones usadas ===
+st.markdown("## 📊 Análisis por categoría: Top 5 provisiones usadas")
+
+try:
+    df_prov_mes = df_prov[(df_prov["mes"] == mes) & (df_prov["año"] == año)]
+
+    if not df_prov_mes.empty and "nombre" in df_prov_mes.columns and "monto_usado" in df_prov_mes.columns:
+        top_prov = (
+            df_prov_mes.groupby("nombre")["monto_usado"]
+            .sum()
+            .sort_values(ascending=False)
+            .head(5)
+        )
+
+        # Mostrar tabla
+        st.table(top_prov.reset_index().rename(columns={"monto_usado": "Total Usado"}))
+
+        # Gráfico de torta
+        fig, ax = plt.subplots()
+        ax.pie(top_prov.values, labels=top_prov.index, autopct="%1.1f%%", startangle=90)
+        ax.axis("equal")
+        st.pyplot(fig)
+    else:
+        st.info("No hay provisiones usadas para este mes.")
+except Exception as e:
+    st.error("No se pudo generar el análisis de provisiones.")
+
+# === Simulador del mes siguiente ===
+st.markdown("## 🔮 Simulador del mes siguiente")
+
+# Calcular mes y año siguiente
+mes_sim = mes + 1 if mes < 12 else 1
+año_sim = año if mes < 12 else año + 1
+
+st.markdown(f"📅 Simulación para: **{mes_sim}/{año_sim}**")
+
+try:
+    # Copiar datos actuales
+    sim_ing = df_ing.copy()
+    sim_gas = df_gas.copy()
+    sim_prov = df_prov.copy()
+    sim_aho = df_aho.copy()
+    sim_deu = df_deu.copy()
+
+    # Reemplazar mes/año
+    for df_sim in [sim_ing, sim_gas, sim_prov, sim_aho, sim_deu]:
+        if "mes" in df_sim.columns:
+            df_sim["mes"] = mes_sim
+        if "año" in df_sim.columns:
+            df_sim["año"] = año_sim
+
+    # Sumar totales simulados
+    s_ing = sim_ing["monto"].sum() if "monto" in sim_ing.columns else 0
+    s_gas = sim_gas["monto"].sum() if "monto" in sim_gas.columns else 0
+    s_deu = sim_deu["monto_cuota"].sum() if "monto_cuota" in sim_deu.columns else 0
+    s_prov = sim_prov["monto_usado"].sum() if "monto_usado" in sim_prov.columns else 0
+    s_aho = sim_aho["monto_ingreso"].sum() if "monto_ingreso" in sim_aho.columns else 0
+    s_saldo = s_ing - (s_gas + s_deu + s_prov + s_aho)
+
+    # Mostrar métricas
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("🟢 Ingresos estimados", f"${s_ing:,.0f}")
+        st.metric("🟠 Gastos fijos estimados", f"${s_gas:,.0f}")
+        st.metric("🔴 Deudas estimadas", f"${s_deu:,.0f}")
+    with col2:
+        st.metric("🟣 Provisiones estimadas", f"${s_prov:,.0f}")
+        st.metric("🟡 Ahorros estimados", f"${s_aho:,.0f}")
+        st.metric("🟢💰 Saldo estimado", f"${s_saldo:,.0f}")
+
+except Exception as e:
+    st.error("No se pudo generar la simulación.")
