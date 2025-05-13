@@ -11,10 +11,6 @@ import matplotlib.pyplot as plt                 # Para generar gráficos
 from google_sheets import connect_to_sheet, read_sheet_as_df, write_df_to_sheet  # Módulo de Google Sheets personalizado
 from io import BytesIO
 
-
-# Mostrar banner Makaboom
-st.image("banner_makaboom.png", use_container_width=True)
-
 # === Validación de PIN de acceso ===
 if "acceso_autorizado" not in st.session_state:
     st.session_state.acceso_autorizado = False
@@ -164,7 +160,24 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
         else:
             df_final = edited_df
 
-        # GUARDAR
+        # Si se paga con provisión, actualizar en hoja Provisiones
+        if "tipo_pago" in edited_df.columns and "cuenta_pago" in edited_df.columns:
+            if nombre_hoja in ["Gastos Fijos", "Deudas"]:
+                df_prov = read_sheet_as_df(sheet, "Provisiones")
+                for i, fila in edited_df.iterrows():
+                    if fila["tipo_pago"] == "provisión":
+                        prov_match = (
+                            (df_prov["nombre"].str.lower() == fila["nombre"].strip().lower()) &
+                            (df_prov["mes"] == mes) & (df_prov["año"] == año)
+                        )
+                        if prov_match.any():
+                            idx = df_prov[prov_match].index[0]
+                            usado = fila["monto"] if nombre_hoja == "Gastos Fijos" else fila.get("monto_cuota", 0)
+                            df_prov.at[idx, "monto_usado"] = usado
+                            write_df_to_sheet(sheet, "Provisiones", df_prov)
+                        else:
+                            st.warning(f"No se encontró provisión para '{fila['nombre']}' en {mes}/{año}")
+        
         write_df_to_sheet(sheet, nombre_hoja, df_final)
         st.success(f"{nombre_hoja} actualizado correctamente.")
 
@@ -248,7 +261,7 @@ def generar_excel_resumen(mes, año, resumen, df_gas, df_aho, df_prov, df_deu, d
 
     except Exception as e:
         st.error("No se pudo generar el calendario de pagos.")
-
+        
     # === Timeline visual de pagos con colores y línea de hoy ===
     st.markdown("### 📅 Visualización de pagos del mes")
 
@@ -461,7 +474,6 @@ df_evo_aho = agrupar(df_aho, "monto_ingreso", "Ahorros")
 
 # Unir todas las tablas
 from functools import reduce
-
 frames = [df_evo_ing, df_evo_gas, df_evo_deu, df_evo_prov, df_evo_aho]
 df_evolucion = reduce(lambda left, right: pd.merge(left, right, on=["año", "mes"], how="outer"), frames)
 df_evolucion.fillna(0, inplace=True)  # Reemplazar nulos
