@@ -122,8 +122,6 @@ with tabs[2]:
     st.write("Aquí se mostrarán gráficos por categoría, evolución mensual, top gastos, etc.")
 
     # Verifica si tiene columnas 'mes' y 'año'
-    tiene_mes_anio = "mes" in df.columns and "año" in df.columns
-
     # Filtra por mes y año actual si corresponde
     if tiene_mes_anio:
         df_filtrado = df[(df["mes"] == mes) & (df["año"] == año)].copy()
