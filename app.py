@@ -135,9 +135,6 @@ with tabs[2]:
     # Mostrar total si hay columna 'monto'
 
     # Botón para agregar una nueva fila vacía
-    if st.button("➕ Agregar fila nueva", key=f"add_{nombre_hoja}"):
-        nueva_fila = pd.DataFrame([{"mes": mes, "año": año}], columns=df.columns) if tiene_mes_anio else pd.DataFrame([{}], columns=df.columns)
-        df_filtrado = pd.concat([df_filtrado, nueva_fila], ignore_index=True)
 
     # Ocultar columnas 'mes' y 'año' en el editor
     columnas_ocultas = ["mes", "año"]  # Mostramos "día", ocultamos solo mes y año
