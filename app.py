@@ -160,7 +160,24 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
         else:
             df_final = edited_df
 
-        # GUARDAR
+        # Si se paga con provisión, actualizar en hoja Provisiones
+        if "tipo_pago" in edited_df.columns and "cuenta_pago" in edited_df.columns:
+            if nombre_hoja in ["Gastos Fijos", "Deudas"]:
+                df_prov = read_sheet_as_df(sheet, "Provisiones")
+                for i, fila in edited_df.iterrows():
+                    if fila["tipo_pago"] == "provisión":
+                        prov_match = (
+                            (df_prov["nombre"].str.lower() == fila["nombre"].strip().lower()) &
+                            (df_prov["mes"] == mes) & (df_prov["año"] == año)
+                        )
+                        if prov_match.any():
+                            idx = df_prov[prov_match].index[0]
+                            usado = fila["monto"] if nombre_hoja == "Gastos Fijos" else fila.get("monto_cuota", 0)
+                            df_prov.at[idx, "monto_usado"] = usado
+                            write_df_to_sheet(sheet, "Provisiones", df_prov)
+                        else:
+                            st.warning(f"No se encontró provisión para '{fila['nombre']}' en {mes}/{año}")
+        
         write_df_to_sheet(sheet, nombre_hoja, df_final)
         st.success(f"{nombre_hoja} actualizado correctamente.")
 
