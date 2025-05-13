@@ -18,18 +18,17 @@ if "acceso_autorizado" not in st.session_state:
     st.session_state.acceso_autorizado = False
 
 if not st.session_state.acceso_autorizado:
-    
-st.title("🔐 Acceso protegido")
-with st.form("login_form"):
-    pin_ingresado = st.text_input("Ingresa tu PIN:", type="password")
-    submitted = st.form_submit_button("🔓 Ingresar")
+    st.title("🔐 Acceso protegido")
+    with st.form("login_form"):
+        pin_ingresado = st.text_input("Ingresa tu PIN:", type="password")
+        submitted = st.form_submit_button("🔓 Ingresar")
 
-    if submitted:
-        if pin_ingresado == st.secrets["security"]["pin"]:
-            st.session_state.acceso_autorizado = True
-            st.success("Acceso concedido. Bienvenida 👋")
-        else:
-            st.error("PIN incorrecto.")
+        if submitted:
+            if pin_ingresado == st.secrets["security"]["pin"]:
+                st.session_state.acceso_autorizado = True
+                st.success("Acceso concedido. Bienvenida 👋")
+            else:
+                st.error("PIN incorrecto.")
 
     if not st.session_state.acceso_autorizado:
         st.stop()
