@@ -105,7 +105,7 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
         df_filtrado = pd.concat([df_filtrado, nueva_fila], ignore_index=True)
 
     # Ocultar columnas 'mes' y 'año' en el editor
-    columnas_ocultas = ["mes", "año"]
+    columnas_ocultas = ["mes", "año"]  # Mostramos "día", ocultamos solo mes y año
     columnas_visibles = [c for c in df_filtrado.columns if c not in columnas_ocultas]
 
     # Editor de datos interactivo
@@ -208,6 +208,91 @@ def generar_excel_resumen(mes, año, resumen, df_gas, df_aho, df_prov, df_deu, d
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+    # === Calendario de pagos del mes ===
+    st.markdown("## 📆 Vencimientos del mes")
+
+    try:
+        calendario = []
+
+        # Deudas
+        if not df_deu.empty:
+            for i, row in df_deu.iterrows():
+                dia = row.get("día")
+                dia = int(dia) if pd.notna(dia) else 5  # valor por defecto si está vacío
+                fecha = datetime.date(año, mes, dia)
+                descripcion = row.get("descripcion", "Deuda")
+                monto = row.get("monto_cuota", 0)
+                calendario.append((fecha, f"💳 {descripcion}", monto))
+
+        # Gastos fijos
+        if not df_gas.empty:
+            for i, row in df_gas.iterrows():
+                dia = row.get("día")
+                dia = int(dia) if pd.notna(dia) else 5  # valor por defecto si está vacío
+                fecha = datetime.date(año, mes, dia)
+                nombre = row.get("nombre", "Gasto Fijo")
+                monto = row.get("monto", 0)
+                calendario.append((fecha, f"💡 {nombre}", monto))
+
+        # Ordenar por fecha
+        calendario.sort()
+
+        # Mostrar tabla
+        df_calendario = pd.DataFrame(calendario, columns=["Fecha", "Descripción", "Monto"])
+        df_calendario["Fecha"] = df_calendario["Fecha"].dt.strftime("%d-%m-%Y")
+        st.table(df_calendario)
+
+    except Exception as e:
+        st.error("No se pudo generar el calendario de pagos.")
+        
+    # === Timeline visual de pagos con colores y línea de hoy ===
+    st.markdown("### 📅 Visualización de pagos del mes")
+
+    try:
+        if not df_calendario.empty:
+            # Preparar datos
+            df_calendario["Día"] = pd.to_datetime(df_calendario["Fecha"], format="%d-%m-%Y").dt.day
+
+            # Detectar tipo por ícono en la descripción
+            def detectar_tipo(desc):
+                if "💳" in desc:
+                    return "deuda"
+                elif "💡" in desc:
+                    return "gasto"
+                else:
+                    return "otro"
+
+            df_calendario["tipo"] = df_calendario["Descripción"].apply(detectar_tipo)
+            df_calendario.sort_values("Día", inplace=True)
+
+            # Asignar colores
+            colores = df_calendario["tipo"].map({
+                "deuda": "#e74c3c",     # rojo
+                "gasto": "#3498db",     # azul
+                "otro": "#95a5a6"       # gris
+            })
+
+            # Dibujar gráfico
+            fig, ax = plt.subplots(figsize=(8, len(df_calendario) * 0.6))
+
+            ax.barh(df_calendario["Descripción"], df_calendario["Día"], color=colores)
+            ax.set_xlabel("Día del mes")
+            ax.set_title("Vencimientos del mes")
+            ax.invert_yaxis()  # Los más próximos arriba
+            ax.grid(axis="x")
+
+            # Línea vertical para hoy (si coincide con el mes)
+            hoy = datetime.date.today()
+            if hoy.month == mes and hoy.year == año:
+                ax.axvline(hoy.day, color="green", linestyle="--", label="Hoy")
+                ax.legend()
+
+            st.pyplot(fig)
+        else:
+            st.info("No hay datos para mostrar en el timeline.")
+    except Exception as e:
+        st.error("Error al generar el gráfico de timeline.")
+            
     # Agregar gráfico de torta si hay valores
     egresos = resumen[1:]
     chart = PieChart()
@@ -372,6 +457,8 @@ df_evo_aho = agrupar(df_aho, "monto_ingreso", "Ahorros")
 
 # Unir todas las tablas
 from functools import reduce
+st.image("banner_makaboom.png", use_column_width=True)
+
 frames = [df_evo_ing, df_evo_gas, df_evo_deu, df_evo_prov, df_evo_aho]
 df_evolucion = reduce(lambda left, right: pd.merge(left, right, on=["año", "mes"], how="outer"), frames)
 df_evolucion.fillna(0, inplace=True)  # Reemplazar nulos
@@ -395,9 +482,14 @@ st.pyplot(fig)
 
 # === Tabs principales del sistema ===
 tabs = st.tabs([
-    "Ingresos", "Provisiones", "Gastos Fijos",
-    "Ahorros", "Reservas Familiares", "Deudas",
-    "Configuración de Cuentas", "Presupuestos Mensuales"
+    "📥 Ingresos", 
+    "🧾 Provisiones", 
+    "💡 Gastos Fijos", 
+    "🏦 Ahorros", 
+    "👨‍👩‍👧‍👦 Reservas Familiares", 
+    "💳 Deudas",
+    "⚙️ Configuración", 
+    "📊 Presupuestos"
 ])
 
 # Mostrar cada pestaña con sus opciones correspondientes
