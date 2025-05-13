@@ -18,10 +18,13 @@ if "acceso_autorizado" not in st.session_state:
     st.session_state.acceso_autorizado = False
 
 if not st.session_state.acceso_autorizado:
-    st.title("🔐 Acceso protegido")
+    
+st.title("🔐 Acceso protegido")
+with st.form("login_form"):
     pin_ingresado = st.text_input("Ingresa tu PIN:", type="password")
+    submitted = st.form_submit_button("🔓 Ingresar")
 
-    if st.button("🔓 Ingresar"):
+    if submitted:
         if pin_ingresado == st.secrets["security"]["pin"]:
             st.session_state.acceso_autorizado = True
             st.success("Acceso concedido. Bienvenida 👋")
@@ -29,7 +32,19 @@ if not st.session_state.acceso_autorizado:
             st.error("PIN incorrecto.")
 
     if not st.session_state.acceso_autorizado:
-        st.stop()  # Detener ejecución si no está autorizada
+        st.stop()
+  # Detener ejecución si no está autorizada
+
+def mostrar_editor(nombre_hoja, columnas_dropdown=None):
+    try:
+        # Leer la hoja desde Google Sheets
+        df = read_sheet_as_df(sheet, nombre_hoja)
+         # === COPIAR DATOS DEL MES ANTERIOR (opcional por hoja) ===
+        if nombre_hoja in ["Gastos Fijos", "Provisiones", "Ahorros", "Deudas", "Reservas Familiares", "Ingresos"]:
+            if st.button("📋 Copiar desde el mes anterior", key=f"copiar_{nombre_hoja}"):
+                # Determinar mes y año anterior
+                mes_anterior = mes - 1 if mes > 1 else 12
+                año_anterior = año if mes > 1 else año - 1
 
 # === Conectarse al Google Sheet usando credenciales seguras ===
 SHEET_KEY = "1OPCAwKXoEHBmagpvkhntywqkAit7178pZv3ptXd9d9w"  # ID del documento en Google Sheets
@@ -70,17 +85,6 @@ with tabs[2]:
     st.header("📈 Reportes y Análisis")
     st.write("Aquí se mostrarán gráficos por categoría, evolución mensual, top gastos, etc.")
 
-
-def mostrar_editor(nombre_hoja, columnas_dropdown=None):
-    try:
-        # Leer la hoja desde Google Sheets
-        df = read_sheet_as_df(sheet, nombre_hoja)
-         # === COPIAR DATOS DEL MES ANTERIOR (opcional por hoja) ===
-        if nombre_hoja in ["Gastos Fijos", "Provisiones", "Ahorros", "Deudas", "Reservas Familiares", "Ingresos"]:
-            if st.button("📋 Copiar desde el mes anterior", key=f"copiar_{nombre_hoja}"):
-                # Determinar mes y año anterior
-                mes_anterior = mes - 1 if mes > 1 else 12
-                año_anterior = año if mes > 1 else año - 1
 
                 # Filtrar datos del mes anterior
                 if tiene_mes_anio:
