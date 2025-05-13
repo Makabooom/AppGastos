@@ -44,12 +44,32 @@ except:
 
 # === Selección centralizada de mes y año ===
 st.title("📋 Control Financiero Personal")
-today = datetime.date.today()
-col1, col2 = st.columns(2)
-with col1:
-    mes = st.selectbox("Mes", list(range(1, 13)), index=today.month - 1)  # Selección del mes actual
-with col2:
-    año = st.selectbox("Año", list(range(2024, 2031)), index=1)  # Selección del año
+
+# === Tabs principales ===
+tabs = st.tabs(["📊 Resumen", "📋 Datos", "📈 Reportes"])
+
+# === RESUMEN GENERAL ===
+with tabs[0]:
+    st.header("📊 Resumen General")
+    # Aquí puedes agregar métricas, gráficos de resumen, alertas
+    st.write("Aquí irá el resumen general del mes (ingresos, gastos, saldo, etc).")
+
+# === DATOS DETALLADOS ===
+with tabs[1]:
+    st.header("📋 Datos Detallados")
+    st.write("Aquí se mostrarán las tablas editables por categoría.")
+
+    # Mostrar editores de cada hoja aquí dentro
+    hojas_datos = ["Ahorros", "Gastos Fijos", "Reservas Familiares", "Deudas", "Ingresos", "Provisiones"]
+    for hoja in hojas_datos:
+        st.subheader(f"✏️ {hoja}")
+        mostrar_editor(hoja)
+
+# === REPORTES Y ANÁLISIS ===
+with tabs[2]:
+    st.header("📈 Reportes y Análisis")
+    st.write("Aquí se mostrarán gráficos por categoría, evolución mensual, top gastos, etc.")
+
 
 def mostrar_editor(nombre_hoja, columnas_dropdown=None):
     try:
