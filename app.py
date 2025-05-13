@@ -13,7 +13,7 @@ from io import BytesIO
 
 
 # Mostrar banner Makaboom
-st.image("banner_makaboom.png", use_column_width=True)
+st.image("banner_makaboom.png", use_container_width=True)
 
 # === Validación de PIN de acceso ===
 if "acceso_autorizado" not in st.session_state:
