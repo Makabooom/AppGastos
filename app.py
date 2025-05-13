@@ -123,7 +123,6 @@ with tabs[2]:
 
     # Verifica si tiene columnas 'mes' y 'año'
     # Filtra por mes y año actual si corresponde
-        df_filtrado = df[(df["mes"] == mes) & (df["año"] == año)].copy()
     else:
         df_filtrado = df.copy()
 
