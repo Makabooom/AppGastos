@@ -123,7 +123,6 @@ with tabs[2]:
 
     # Verifica si tiene columnas 'mes' y 'año'
     # Filtra por mes y año actual si corresponde
-    if tiene_mes_anio:
         df_filtrado = df[(df["mes"] == mes) & (df["año"] == año)].copy()
     else:
         df_filtrado = df.copy()
@@ -193,7 +192,6 @@ with tabs[2]:
             st.info("Marca la casilla para confirmar antes de guardar.")
 
         # COMPLETAR MES Y AÑO
-        if tiene_mes_anio:
             edited_df["mes"] = mes
             edited_df["año"] = año
             df_sin_filtro = df[~((df["mes"] == mes) & (df["año"] == año))]
