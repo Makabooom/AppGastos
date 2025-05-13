@@ -323,6 +323,9 @@ def generar_excel_resumen(mes, año, resumen, df_gas, df_aho, df_prov, df_deu, d
 
             st.pyplot(fig)
 
+    except:
+        st.warning("Ocurrió un error al generar el resumen para exportar.")
+
     # Agregar cada hoja de datos
     for nombre, df in [("Gastos", df_gas), ("Ahorros", df_aho), ("Provisiones", df_prov), ("Deudas", df_deu), ("Ingresos", df_ing)]:
         ws2 = wb.create_sheet(title=nombre)
