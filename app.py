@@ -7,7 +7,9 @@
 import streamlit as st                          # Para construir la interfaz web
 import pandas as pd                             # Para manejo de datos y estructuras tipo tabla
 import datetime                                 # Para trabajar con fechas
-import matplotlib.pyplot as plt                 # Para generar gráficos
+import matplotlib.pyplot as plt                 
+plt.style.use("dark_background")
+# Para generar gráficos
 from google_sheets import connect_to_sheet, read_sheet_as_df, write_df_to_sheet  # Módulo de Google Sheets personalizado
 from io import BytesIO
 
@@ -54,7 +56,7 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
         # Leer la hoja desde Google Sheets
         df = read_sheet_as_df(sheet, nombre_hoja)
          # === COPIAR DATOS DEL MES ANTERIOR (opcional por hoja) ===
-        if nombre_hoja in ["Gastos Fijos", "Provisiones", "Ahorros"]:
+        if nombre_hoja in ["Gastos Fijos", "Provisiones", "Ahorros", "Deudas", "Reservas Familiares", "Ingresos"]:
             if st.button("📋 Copiar desde el mes anterior", key=f"copiar_{nombre_hoja}"):
                 # Determinar mes y año anterior
                 mes_anterior = mes - 1 if mes > 1 else 12
