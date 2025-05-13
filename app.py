@@ -36,6 +36,7 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
     try:
         # Leer la hoja desde Google Sheets
         df = read_sheet_as_df(sheet, nombre_hoja)
+        tiene_mes_anio = "mes" in df.columns and "año" in df.columns
 
         # === COPIAR DATOS DEL MES ANTERIOR (opcional por hoja) ===
         if nombre_hoja in ["Gastos Fijos", "Provisiones", "Ahorros", "Deudas", "Reservas Familiares", "Ingresos"]:
