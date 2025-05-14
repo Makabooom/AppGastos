@@ -19,6 +19,9 @@ plt.style.use("dark_background")
 from google_sheets import connect_to_sheet, read_sheet_as_df, write_df_to_sheet  # Módulo de Google Sheets personalizado
 from io import BytesIO
 
+#Banner
+st.image("banner_makaboom.png", use_container_width=True)
+
 # === Validación de PIN de acceso ===
 if "acceso_autorizado" not in st.session_state:
     st.session_state.acceso_autorizado = False
@@ -49,8 +52,7 @@ except:
     lista_cuentas = []  # Si falla, dejar la lista vacía
 
 # === Selección centralizada de mes y año ===
-st.image("banner_makaboom.png", use_column_width=True)
-st.image("banner_makaboom.png", use_column_width=True)
+
 st.title("📋 Control Financiero Personal")
 today = datetime.date.today()
 col1, col2 = st.columns(2)
