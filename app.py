@@ -160,6 +160,20 @@ with main_tabs[0]:
 
         saldo_real = total_ingresos - gasto_total - provisiones_guardadas - ahorros_guardados
 
+        # === Mostrar métricas ===
+        col1, col2, col3 = st.columns(3)
+        col1.metric("💰 Ingresos Totales", f"${total_ingresos:,.0f}")
+        col2.metric("💸 Gasto Total (todos los orígenes)", f"${gasto_total:,.0f}")
+        col3.metric("🧮 Saldo Disponible Real", f"${saldo_real:,.0f}")
+
+        # === Barra de progreso de uso del ingreso mensual ===
+        if total_ingresos > 0:
+            porcentaje_gasto = min(gasto_total / total_ingresos, 1.0)
+            st.progress(porcentaje_gasto, text=f"{porcentaje_gasto * 100:.1f}% del ingreso mensual gastado")
+        else:
+            st.info("Aún no se han registrado ingresos para este mes.")
+
+        # === Distribución del gasto mensual por origen ===
         st.markdown("#### 💸 Distribución del gasto mensual por origen")
         col1, col2, col3 = st.columns(3)
         col1.metric("🧾 Desde Ingresos Normales", f"${gasto_normal:,.0f}")
@@ -168,12 +182,6 @@ with main_tabs[0]:
         st.caption(f"💼 Gasto total del mes (sumado): ${gasto_total:,.0f}")
 
 
-        # === Mostrar métricas ===
-        col1, col2, col3 = st.columns(3)
-        col1.metric("💰 Ingresos Totales", f"${total_ingresos:,.0f}")
-        col2.metric("💸 Gasto Total (todos los orígenes)", f"${gasto_total:,.0f}")
-        col3.metric("🧮 Saldo Disponible Real", f"${saldo_real:,.0f}")
-        
         # === Barra de progreso de uso del ingreso mensual ===
         if total_ingresos > 0:
             porcentaje_gasto = min(gasto_total / total_ingresos, 1.0)
