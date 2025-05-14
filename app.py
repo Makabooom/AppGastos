@@ -16,6 +16,9 @@ def validar_clave():
     else:
         st.error("PIN incorrecto.")
 
+def clp(monto):
+    return f"${int(monto):,}".replace(",", ".")
+
 
 if "acceso_autorizado" not in st.session_state:
     st.session_state.acceso_autorizado = False
@@ -175,9 +178,9 @@ with main_tabs[0]:
 
         # === Mostrar métricas ===
         col1, col2, col3 = st.columns(3)
-        col1.metric("💰 Ingresos Totales", f"${total_ingresos:,.0f}")
-        col2.metric("💸 Gasto Total (todos los orígenes)", f"${gasto_total:,.0f}")
-        col3.metric("🧮 Saldo Disponible Real", f"${saldo_real:,.0f}")
+        col1.metric("💰 Ingresos Totales", clp(total_ingresos))
+        col2.metric("💸 Gasto Total (todos los orígenes)", clp(gasto_total))
+        col3.metric("🧮 Saldo Disponible Real", clp(saldo_real))
 
         # === Barra de progreso de uso del ingreso mensual ===
         if total_ingresos > 0:
@@ -189,10 +192,10 @@ with main_tabs[0]:
         # === Distribución del gasto mensual por origen ===
         st.markdown("# 💸 Distribución del gasto mensual por origen")
         col1, col2, col3 = st.columns(3)
-        col1.metric("🧾 Desde Ingresos Normales", f"${gasto_normal:,.0f}")
-        col2.metric("🏷️ Desde Provisiones", f"${gasto_provisiones:,.0f}")
-        col3.metric("🏦 Desde Ahorros", f"${gasto_ahorros:,.0f}")
-        st.caption(f"💼 Gasto total del mes (sumado): ${gasto_total:,.0f}")
+        col1.metric("🧾 Desde Ingresos Normales", clp(gasto_normal))
+        col2.metric("🏷️ Desde Provisiones", clp(gasto_provisiones))
+        col3.metric("🏦 Desde Ahorros", clp(gasto_ahorros))
+        st.caption(f"💼 Gasto total del mes (sumado): {clp(gasto_total)}")
 
 
         # === Barra de progreso de uso del ingreso mensual ===
@@ -357,12 +360,19 @@ with main_tabs[3]:
             # === Gráfico en modo oscuro ===
             import matplotlib.pyplot as plt
 
+def autopct_monto(pct, valores):
+    total = sum(valores)
+    valor = int(round(pct * total / 100.0))
+    return f"{pct:.1f}%\n$ {valor:,}".replace(",", ".")
+
             plt.style.use("dark_background")
             fig, ax = plt.subplots()
             ax.bar(df_merge["periodo"], df_merge["ingresos"], label="Ingresos", color="#4CAF50")
             ax.bar(df_merge["periodo"], df_merge["gastos_totales"], label="Gastos", color="#F44336", alpha=0.7)
             ax.set_title("Ingresos vs Gastos Totales por Mes")
             ax.set_ylabel("CLP")
+import matplotlib.ticker as mticker
+ax.get_yaxis().set_major_formatter(mticker.FuncFormatter(lambda x, _: f"$ {int(x):,}".replace(",", ".")))
             ax.legend()
             ax.tick_params(axis='x', rotation=45)
 
@@ -401,9 +411,14 @@ with main_tabs[3]:
                 st.info("No se han registrado gastos este mes.")
             else:
                 import matplotlib.pyplot as plt
+
+def autopct_monto(pct, valores):
+    total = sum(valores)
+    valor = int(round(pct * total / 100.0))
+    return f"{pct:.1f}%\n$ {valor:,}".replace(",", ".")
                 plt.style.use("dark_background")
                 fig, ax = plt.subplots()
-                ax.pie(valores, labels=labels, autopct="%1.1f%%", startangle=90)
+                ax.pie(valores, labels=labels, autopct=lambda pct: autopct_monto(pct, valores), startangle=90)
                 ax.set_title("Distribución del Gasto por Origen")
                 st.pyplot(fig)
 
@@ -453,6 +468,11 @@ with main_tabs[3]:
 
             # Gráfico
             import matplotlib.pyplot as plt
+
+def autopct_monto(pct, valores):
+    total = sum(valores)
+    valor = int(round(pct * total / 100.0))
+    return f"{pct:.1f}%\n$ {valor:,}".replace(",", ".")
             plt.style.use("dark_background")
             fig, ax = plt.subplots()
             ax.plot(df_merge["periodo"], df_merge["ingresos"], label="Ingresos", marker="o", color="#4CAF50")
@@ -461,6 +481,8 @@ with main_tabs[3]:
 
             ax.set_title("Evolución de Ingresos, Gastos y Saldo Real")
             ax.set_ylabel("CLP")
+import matplotlib.ticker as mticker
+ax.get_yaxis().set_major_formatter(mticker.FuncFormatter(lambda x, _: f"$ {int(x):,}".replace(",", ".")))
             ax.set_xlabel("Mes/Año")
             ax.tick_params(axis="x", rotation=45)
             ax.legend()
@@ -564,8 +586,8 @@ with main_tabs[4]:
     # Métricas
     st.markdown(" 📊 Resultado Proyectado")
     col1, col2 = st.columns(2)
-    col1.metric("💸 Gasto Total", f"${gasto_total:,.0f}")
-    col2.metric("🧮 Saldo Disponible", f"${saldo_proyectado:,.0f}")
+    col1.metric("💸 Gasto Total", clp(gasto_total))
+    col2.metric("🧮 Saldo Disponible", clp(saldo_proyectado))
 
     # === Gráfico de distribución proyectada del ingreso ===
     st.markdown(" 🧁 Distribución del ingreso simulado")
@@ -579,9 +601,14 @@ with main_tabs[4]:
         st.info("No hay ingreso simulado para mostrar la distribución.")
     else:
         import matplotlib.pyplot as plt
+
+def autopct_monto(pct, valores):
+    total = sum(valores)
+    valor = int(round(pct * total / 100.0))
+    return f"{pct:.1f}%\n$ {valor:,}".replace(",", ".")
         plt.style.use("dark_background")
         fig, ax = plt.subplots()
-        ax.pie(valores, labels=etiquetas, autopct="%1.1f%%", startangle=90)
+        ax.pie(valores, labels=etiquetas, autopct=lambda pct: autopct_monto(pct, valores), startangle=90)
         ax.set_title("Distribución proyectada del ingreso")
         st.pyplot(fig)
 
