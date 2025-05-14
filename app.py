@@ -1,17 +1,3 @@
-# ================================================================
-# App de Control Financiero Personal
-# Hecho por Macarena Mallea – Mayo 2025
-# ================================================================
-
-# === Importación de librerías necesarias ===
-import streamlit as st                          # Para construir la interfaz web
-import pandas as pd                             # Para manejo de datos y estructuras tipo tabla
-import datetime                                 # Para trabajar con fechas
-import matplotlib.pyplot as plt                 
-plt.style.use("dark_background")
-# Para generar gráficos
-from google_sheets import connect_to_sheet, read_sheet_as_df, write_df_to_sheet  # Módulo de Google Sheets personalizado
-from io import BytesIO
 
 
 def mostrar_editor(nombre_hoja, columnas_dropdown=None):
@@ -149,7 +135,23 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
         # Resetear checkbox
         st.session_state[f"confirm_{nombre_hoja}"] = False
 
-        
+from io import BytesIO
+
+# ================================================================
+# App de Control Financiero Personal
+# Hecho por Macarena Mallea – Mayo 2025
+# ================================================================
+
+# === Importación de librerías necesarias ===
+import streamlit as st                          # Para construir la interfaz web
+import pandas as pd                             # Para manejo de datos y estructuras tipo tabla
+import datetime                                 # Para trabajar con fechas
+import matplotlib.pyplot as plt                 
+plt.style.use("dark_background")
+# Para generar gráficos
+from google_sheets import connect_to_sheet, read_sheet_as_df, write_df_to_sheet  # Módulo de Google Sheets personalizado
+from io import BytesIO
+
 # === Validación de PIN de acceso ===
 if "acceso_autorizado" not in st.session_state:
     st.session_state.acceso_autorizado = False
@@ -181,22 +183,50 @@ except:
 
 # === Selección centralizada de mes y año ===
 if st.session_state.acceso_autorizado:
-    
-
+    if st.session_state.acceso_autorizado:
+    if st.session_state.acceso_autorizado:
+    # Selección de mes y año
     today = datetime.date.today()
     col1, col2 = st.columns(2)
     with col1:
         mes = st.selectbox("Mes", list(range(1, 13)), index=today.month - 1)
     with col2:
-        año = st.selectbox("Año", list(range(2024, 2031)), index=1)if st.session_state.acceso_autorizado:
-        
+        año = st.selectbox("Año", list(range(2024, 2031)), index=1)
 
-    today = datetime.date.today()
-    col1, col2 = st.columns(2)
-    with col1:
-        mes = st.selectbox("Mes", list(range(1, 13)), index=today.month - 1)
-    with col2:
-        año = st.selectbox("Año", list(range(2024, 2031)), index=1)st.title("📋 Control Financiero Personal")
+    # Tabs principales
+    tabs = st.tabs(["📊 Resumen", "📋 Datos Detallados", "📈 Reportes"])
+
+    with tabs[0]:
+        st.header("📊 Resumen General")
+        st.write("Aquí irá el resumen general del mes (ingresos, gastos, saldo, etc).")
+
+    with tabs[1]:
+        st.header("📋 Datos Detallados")
+        sub_tabs = st.tabs([
+            "💸 Ingresos",
+            "🏠 Gastos Fijos",
+            "🏦 Provisiones",
+            "📉 Deudas",
+            "💰 Ahorros",
+            "📦 Reservas"
+        ])
+
+        with sub_tabs[0]:
+            mostrar_editor("Ingresos")
+        with sub_tabs[1]:
+            mostrar_editor("Gastos Fijos")
+        with sub_tabs[2]:
+            mostrar_editor("Provisiones")
+        with sub_tabs[3]:
+            mostrar_editor("Deudas")
+        with sub_tabs[4]:
+            mostrar_editor("Ahorros")
+        with sub_tabs[5]:
+            mostrar_editor("Reservas Familiares")
+
+    with tabs[2]:
+        st.header("📈 Reportes y Análisis")
+        st.write("Aquí se mostrarán gráficos por categoría, evolución mensual, top gastos, etc.")
 
     tabs = st.tabs(["📊 Resumen", "📋 Datos Detallados", "📈 Reportes"])
 
@@ -251,10 +281,13 @@ if st.session_state.acceso_autorizado:
     with tabs[2]:
         st.header("📈 Reportes y Análisis")
         st.write("Aquí se mostrarán gráficos por categoría, evolución mensual, top gastos, etc.")
-), index=1)  # Selección del año
+today = datetime.date.today()
+col1, col2 = st.columns(2)
+with col1:
+    mes = st.selectbox("Mes", list(range(1, 13)), index=today.month - 1)  # Selección del mes actual
+with col2:
+    año = st.selectbox("Año", list(range(2024, 2031)), index=1)  # Selección del año
 
-
-from io import BytesIO
 
 def generar_excel_resumen(mes, año, resumen, df_gas, df_aho, df_prov, df_deu, df_ing):
     from openpyxl import Workbook
