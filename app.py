@@ -44,7 +44,47 @@ except:
 
 # === Selección centralizada de mes y año ===
 if st.session_state.acceso_autorizado:
+    if st.session_state.acceso_autorizado:
     st.title("📋 Control Financiero Personal")
+
+    tabs = st.tabs(["📊 Resumen", "📋 Datos Detallados", "📈 Reportes"])
+
+    with tabs[0]:
+        st.header("📊 Resumen General")
+        st.write("Aquí irá el resumen general del mes (ingresos, gastos, saldo, etc).")
+
+    with tabs[1]:
+        st.header("📋 Datos Detallados")
+        sub_tabs = st.tabs([
+            "💸 Ingresos",
+            "🏠 Gastos Fijos",
+            "🏦 Provisiones",
+            "📉 Deudas",
+            "💰 Ahorros",
+            "📦 Reservas"
+        ])
+
+        with sub_tabs[0]:
+            mostrar_editor("Ingresos")
+
+        with sub_tabs[1]:
+            mostrar_editor("Gastos Fijos")
+
+        with sub_tabs[2]:
+            mostrar_editor("Provisiones")
+
+        with sub_tabs[3]:
+            mostrar_editor("Deudas")
+
+        with sub_tabs[4]:
+            mostrar_editor("Ahorros")
+
+        with sub_tabs[5]:
+            mostrar_editor("Reservas Familiares")
+
+    with tabs[2]:
+        st.header("📈 Reportes y Análisis")
+        st.write("Aquí se mostrarán gráficos por categoría, evolución mensual, top gastos, etc.")
 
     tabs = st.tabs(["📊 Resumen", "📋 Datos", "📈 Reportes"])
 
