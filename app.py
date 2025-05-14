@@ -116,6 +116,7 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
         df_filtrado[columnas_visibles],
         num_rows="dynamic",
         use_container_width=True,
+        hide_index=True,
         column_config={
             col: st.column_config.SelectboxColumn("Cuenta", options=lista_cuentas, required=True)
             for col in (columnas_dropdown or []) if col in columnas_visibles
@@ -291,7 +292,8 @@ with main_tabs[2]:
         edited_cuentas = st.data_editor(
             df_cuentas,
             num_rows="dynamic",
-            use_container_width=True
+            use_container_width=True,
+            hide_index=True
         )
 
         if st.button("💾 Guardar cambios en Cuentas"):
