@@ -471,15 +471,15 @@ with main_tabs[3]:
 
         with rep_tabs[3]:  
             st.markdown("### 📤 Exportar tus datos")
+
             try:
-                # Leer todas las hojas filtradas por año y/o mes
                 hojas = ["Ingresos", "Gastos Fijos", "Deudas", "Provisiones", "Ahorros", "Reservas Familiares"]
                 dfs_mes = {}
                 dfs_año = {}
 
                 for hoja in hojas:
                     df = df_hojas.get(hoja, pd.DataFrame())
-                    # Guardar mensual
+
                     if "mes" in df.columns and "año" in df.columns:
                         df_mes = df[(df["mes"] == mes) & (df["año"] == año)]
                         df_año = df[df["año"] == año]
@@ -527,6 +527,7 @@ with main_tabs[3]:
             except Exception as e:
                 st.error("No se pudo generar el archivo para exportar.")
                 st.text(f"Error: {e}")
+
 
         
 with main_tabs[4]:
