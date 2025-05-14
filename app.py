@@ -1,8 +1,9 @@
 def validar_clave():
-    if st.session_state.clave_ingresada == "1234":
+    if st.session_state.pin_clave == st.secrets["security"]["pin"]:
         st.session_state.acceso_autorizado = True
+        st.success("Acceso concedido. Bienvenida 👋")
     else:
-        st.error("Clave incorrecta")
+        st.error("PIN incorrecto.")
 
 # ================================================================
 # App de Control Financiero Personal
@@ -28,10 +29,9 @@ if "acceso_autorizado" not in st.session_state:
 
 if not st.session_state.acceso_autorizado:
     st.title("🔐 Acceso protegido")
-    
-            st.success("Acceso concedido. Bienvenida 👋")
-        else:
-            st.error("PIN incorrecto.")
+    pin_ingresado = st.text_input("Ingresa tu PIN:", type="password")
+
+    st.text_input("Ingresa tu PIN:", type="password", key="pin_clave", on_change=validar_clave)
 
     if not st.session_state.acceso_autorizado:
         st.stop()  # Detener ejecución si no está autorizada
