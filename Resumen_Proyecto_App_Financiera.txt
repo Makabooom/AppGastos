@@ -1,0 +1,52 @@
+📊 RESUMEN PROYECTO: APP DE CONTROL FINANCIERO PERSONAL (MAKA)
+
+✅ FUNCIONALIDADES IMPLEMENTADAS
+
+1. 🗃️ Estructura de datos basada en Google Sheets:
+   - Ingresos
+   - Gastos Fijos
+   - Deudas
+   - Provisiones
+   - Ahorros
+   - Reservas Familiares
+
+2. 🧠 Navegación por pestañas (Streamlit):
+   - 📊 Resumen General (ingresos, gasto total, saldo disponible real)
+   - 🔔 Alertas (análisis automático de posibles riesgos)
+   - 📋 Datos Detallados (editor por hoja)
+   - 📈 Reportes y Análisis (subpestañas):
+       - Ingresos vs Gastos
+       - Distribución por origen del gasto
+       - Evolución mensual
+       - Exportar resumen mensual o anual
+   - 🧮 Simulador de Próximo Mes
+
+3. 💸 Formato CLP en toda la visualización:
+   - Métricas y resultados clave
+   - Gráficos (barras y torta) en modo oscuro
+   - Simulador con resultados numéricos y visuales
+
+4. 📤 Exportación:
+   - A Excel (.xlsx) mensual y anual
+   - Evita límites de cuota usando lecturas centralizadas
+
+5. 🔁 Simulador:
+   - Se inicializa con datos del mes actual
+   - Proyección completa editable con gráfico de distribución
+
+✅ AJUSTES CLAVE
+
+- Ocultamos índices en todas las grillas (`hide_index=True`)
+- Centralizamos lecturas de Google Sheets para evitar errores 429
+- Agregamos función `clp()` para formato consistente
+- Usamos gráficos en modo oscuro por defecto
+- Código modular y preparado para futuras expansiones
+
+⏳ PENDIENTES FUTUROS (Opcionales)
+- Mostrar columnas decorativas CLP en campos editables
+- Exportación a PDF
+- Seguridad por clave o pin
+- Plantilla de simulador aplicada automáticamente al nuevo mes
+- Filtro por categorías y comparativo anual
+
+💾 Versión estable actual: app_formato_clp.py
