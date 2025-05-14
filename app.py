@@ -75,6 +75,8 @@ with col3:
                 st.toast(f"{hoja} copiado correctamente.")
             except Exception as e:
                 st.toast(f"Error al copiar {hoja}: {e}")
+        st.session_state["mes_selector"] = nuevo_mes
+        st.session_state["año_selector"] = nuevo_año
 
 
 # === Leer cuentas ===
@@ -124,11 +126,29 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
 main_tabs = st.tabs(["📊 Resumen General",
                     "🔔 Alertas",
                     "📋 Datos Detallados",
-                     "📈 Reportes y Análisis"])
+                    "📈 Reportes y Análisis",
+                    "🧮 Simulador"])
 
 
 with main_tabs[0]:
-        st.subheader("📊 Resumen General")
+    st.subheader("📊 Resumen General")
+    #=== RESUMEN GRAL
+    try:
+        df_ing = read_sheet_as_df(sheet, "Ingresos")
+        df_gas = read_sheet_as_df(sheet, "Gastos Fijos")
+
+        total_ingresos = df_ing[(df_ing["mes"] == mes) & (df_ing["año"] == año)]["monto"].sum()
+        total_gastos = df_gas[(df_gas["mes"] == mes) & (df_gas["año"] == año)]["monto"].sum()
+        saldo = total_ingresos - total_gastos
+
+        col1, col2, col3 = st.columns(3)
+        col1.metric("💰 Ingresos Totales", f"${total_ingresos:,.0f}")
+        col2.metric("💸 Gastos Fijos", f"${total_gastos:,.0f}")
+        col3.metric("💼 Saldo Disponible", f"${saldo:,.0f}")
+
+    except Exception as e:
+        st.warning("No se pudo calcular el resumen financiero.")
+        st.text(f"Error: {e}")
     
 with main_tabs[1]:
         st.subheader("🔔 Alertas")
@@ -175,4 +195,9 @@ with main_tabs[2]:
 
     
 with main_tabs[3]:
-        st.subheader("📈 Reportes y Análisis")                
+        st.subheader("📈 Reportes y Análisis")     
+
+    
+with main_tabs[4]:
+        st.subheader("🧮 “Simulador”")     
+        #           
