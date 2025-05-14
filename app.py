@@ -292,9 +292,74 @@ with main_tabs[2]:
 
     
 with main_tabs[3]:
-        st.subheader("📈 Reportes y Análisis")     
+        st.subheader("📈 Reportes y Análisis")   
+        
+        rep_tabs = st.tabs([
+            "💰 Ingresos vs Gastos",
+            "📊 Distribución por Categoría",
+            "📆 Evolución Mensual",
+            "📤 Exportar Resumen"
+        ])
 
-    
+        with rep_tabs[0]:
+            st.markdown("### 💰 Ingresos vs Gastos Mensuales")
+
+            try:
+                df_ing = read_sheet_as_df(sheet, "Ingresos")
+                df_gas = read_sheet_as_df(sheet, "Gastos Fijos")
+                df_deu = read_sheet_as_df(sheet, "Deudas")
+                df_pro = read_sheet_as_df(sheet, "Provisiones")
+                df_aho = read_sheet_as_df(sheet, "Ahorros")
+
+                # Agrupar ingresos
+                df_ingresos = df_ing.groupby(["año", "mes"])["monto"].sum().reset_index(name="ingresos")
+
+                # Gastos fijos pagados
+                df_gas_pag = df_gas[df_gas["estado"].str.lower() == "pagado"]
+                df_gastos_fijos = df_gas_pag.groupby(["año", "mes"])["monto"].sum().reset_index(name="gastos_fijos")
+
+                # Deudas = monto_cuota * cuotas_mes
+                df_deu["gasto_deuda"] = df_deu["monto_cuota"] * df_deu["cuotas_mes"]
+                df_gastos_deuda = df_deu.groupby(["año", "mes"])["gasto_deuda"].sum().reset_index(name="deudas")
+
+                # Provisiones usadas
+                df_gastos_prov = df_pro.groupby(["año", "mes"])["monto_usado"].sum().reset_index(name="provisiones_usadas")
+
+                # Ahorros retirados
+                df_gastos_aho = df_aho.groupby(["año", "mes"])["monto_retirado"].sum().reset_index(name="ahorros_usados")
+
+                # Combinar todo
+                df_merge = df_ingresos \
+                    .merge(df_gastos_fijos, on=["año", "mes"], how="left") \
+                    .merge(df_gastos_deuda, on=["año", "mes"], how="left") \
+                    .merge(df_gastos_prov, on=["año", "mes"], how="left") \
+                    .merge(df_gastos_aho, on=["año", "mes"], how="left")
+
+                # Reemplazar nulos por 0
+                df_merge.fillna(0, inplace=True)
+
+                df_merge["gastos_totales"] = df_merge["gastos_fijos"] + df_merge["deudas"] + df_merge["provisiones_usadas"] + df_merge["ahorros_usados"]
+                df_merge["periodo"] = df_merge["mes"].astype(str).str.zfill(2) + "/" + df_merge["año"].astype(str)
+
+                # === Gráfico en modo oscuro ===
+                import matplotlib.pyplot as plt
+
+                plt.style.use("dark_background")
+                fig, ax = plt.subplots()
+                ax.bar(df_merge["periodo"], df_merge["ingresos"], label="Ingresos", color="#4CAF50")
+                ax.bar(df_merge["periodo"], df_merge["gastos_totales"], label="Gastos", color="#F44336", alpha=0.7)
+                ax.set_title("Ingresos vs Gastos Totales por Mes")
+                ax.set_ylabel("CLP")
+                ax.legend()
+                ax.tick_params(axis='x', rotation=45)
+
+                st.pyplot(fig)
+
+            except Exception as e:
+                st.error("No se pudo generar el gráfico de ingresos vs gastos.")
+                st.text(f"Error: {e}")
+
+        
 with main_tabs[4]:
         st.subheader("🧮 “Simulador”")     
         #           
