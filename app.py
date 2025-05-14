@@ -44,7 +44,7 @@ with col3:
     st.markdown("<br>", unsafe_allow_html=True)  # Esto empuja el botón hacia abajo
     if st.button("➡️ Ir a nuevo mes", help="Duplicar datos al mes siguiente"):
         nuevo_mes, nuevo_año = obtener_mes_siguiente(mes, año)
-        st.info(f"Creando datos para {nuevo_mes}/{nuevo_año}...")
+        st.toast(f"Creando datos para {nuevo_mes}/{nuevo_año}...")
 
         hojas = {
             "Ingresos": {},
@@ -59,7 +59,7 @@ with col3:
                 df = read_sheet_as_df(sheet, hoja)
                 df_origen = df[(df["mes"] == mes) & (df["año"] == año)].copy()
                 if df_origen.empty:
-                    st.warning(f"No hay datos en {hoja} para copiar.")
+                    st.toast(f"No hay datos en {hoja} para copiar.")
                     continue
 
                 df_origen["mes"] = nuevo_mes
@@ -72,9 +72,9 @@ with col3:
                 df_sin_nuevo = df[~((df["mes"] == nuevo_mes) & (df["año"] == nuevo_año))]
                 df_final = pd.concat([df_sin_nuevo, df_origen], ignore_index=True)
                 write_df_to_sheet(sheet, hoja, df_final)
-                st.success(f"{hoja} copiado correctamente.")
+                st.toast(f"{hoja} copiado correctamente.")
             except Exception as e:
-                st.error(f"Error al copiar {hoja}: {e}")
+                st.toast(f"Error al copiar {hoja}: {e}")
 
 
 # === Leer cuentas ===
