@@ -197,6 +197,59 @@ with main_tabs[0]:
 with main_tabs[1]:
         st.subheader("🔔 Alertas")
 
+        try:
+            df_ing = read_sheet_as_df(sheet, "Ingresos")
+            df_gastos = read_sheet_as_df(sheet, "Gastos Fijos")
+            df_deudas = read_sheet_as_df(sheet, "Deudas")
+            df_provisiones = read_sheet_as_df(sheet, "Provisiones")
+            df_ahorros = read_sheet_as_df(sheet, "Ahorros")
+
+            # === Filtrar por mes y año
+            ing_mes = df_ing[(df_ing["mes"] == mes) & (df_ing["año"] == año)]
+            gastos_pagados = df_gastos[(df_gastos["mes"] == mes) & (df_gastos["año"] == año) & (df_gastos["estado"].str.lower() == "pagado")]
+            deudas_mes = df_deudas[(df_deudas["mes"] == mes) & (df_deudas["año"] == año)]
+            provisiones_mes = df_provisiones[(df_provisiones["mes"] == mes) & (df_provisiones["año"] == año)]
+            ahorros_mes = df_ahorros[(df_ahorros["mes"] == mes) & (df_ahorros["año"] == año)]
+
+            alerta_mostrada = False
+
+            # 1. Provisiones "se usó" = Sí, pero monto usado = 0
+            usadas_cero = provisiones_mes[(provisiones_mes["se_usó"].str.lower() == "sí") & (provisiones_mes["monto_usado"] == 0)]
+            if not usadas_cero.empty:
+                st.error("⚠️ Hay provisiones marcadas como 'Se usó = Sí' pero sin monto registrado.")
+                alerta_mostrada = True
+
+            # 2. Ingresos < Gasto total
+            ingreso_total = ing_mes["monto"].sum()
+            gasto_normal = gastos_pagados["monto"].sum() + (deudas_mes["monto_cuota"] * deudas_mes["cuotas_mes"]).sum()
+            gasto_provisiones = provisiones_mes["monto_usado"].sum()
+            gasto_ahorros = ahorros_mes["monto_retirado"].sum()
+            gasto_total = gasto_normal + gasto_provisiones + gasto_ahorros
+
+            if ingreso_total < gasto_total:
+                st.error("🚨 Gastaste más de lo que ganaste este mes.")
+                alerta_mostrada = True
+
+            # 3. Deudas con cuotas_mes = 0
+            deudas_no_pagadas = deudas_mes[deudas_mes["cuotas_mes"] == 0]
+            if not deudas_no_pagadas.empty:
+                st.warning("🔔 Hay deudas sin cuotas registradas este mes.")
+                alerta_mostrada = True
+
+            # 4. Provisiones sin saldo (monto = 0)
+            provisiones_sin_fondo = provisiones_mes[provisiones_mes["monto"] == 0]
+            if not provisiones_sin_fondo.empty:
+                st.warning("💡 Hay provisiones con saldo cero. Podrías no tener cómo cubrir futuros gastos.")
+                alerta_mostrada = True
+
+            if not alerta_mostrada:
+                st.success("✨ Todo en orden este mes. ¡Buen trabajo!")
+
+        except Exception as e:
+            st.warning("No se pudieron evaluar las alertas.")
+            st.text(f"Error: {e}")
+
+
 with main_tabs[2]:
     # === Tabs principales reorganizados ===
     sub_tabs = st.tabs([
