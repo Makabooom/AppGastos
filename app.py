@@ -13,6 +13,7 @@ def validar_clave():
     else:
         st.error("PIN incorrecto.")
 
+
 if "acceso_autorizado" not in st.session_state:
     st.session_state.acceso_autorizado = False
 
@@ -31,6 +32,48 @@ with col1:
     mes = st.selectbox("Mes", list(range(1, 13)), index=today.month - 1, key="mes_selector")
 with col2:
     año = st.selectbox("Año", list(range(2024, 2031)), index=1, key="año_selector")
+
+#Función obtener mes  y año siguiente
+def obtener_mes_siguiente(mes_actual, año_actual):
+    if mes_actual == 12:
+        return 1, año_actual + 1
+    else:
+        return mes_actual + 1, año_actual
+    
+#Botón Ir a Nuevo Mes
+if st.button("➡️ Ir a nuevo mes", help="Duplicar datos al mes siguiente"):
+    nuevo_mes, nuevo_año = obtener_mes_siguiente(mes, año)
+    st.info(f"Creando datos para {nuevo_mes}/{nuevo_año}...")
+
+    hojas = {
+        "Ingresos": {},
+        "Provisiones": {"se_usó": "No", "monto_usado": 0},
+        "Gastos Fijos": {"estado": "pendiente"},
+        "Ahorros": {},
+        "Reservas Familiares": {}
+    }
+
+    for hoja, ajustes in hojas.items():
+        try:
+            df = read_sheet_as_df(sheet, hoja)
+            df_origen = df[(df["mes"] == mes) & (df["año"] == año)].copy()
+            if df_origen.empty:
+                st.warning(f"No hay datos en {hoja} para copiar.")
+                continue
+
+            df_origen["mes"] = nuevo_mes
+            df_origen["año"] = nuevo_año
+
+            for col, val in ajustes.items():
+                if col in df_origen.columns:
+                    df_origen[col] = val
+
+            df_sin_nuevo = df[~((df["mes"] == nuevo_mes) & (df["año"] == nuevo_año))]
+            df_final = pd.concat([df_sin_nuevo, df_origen], ignore_index=True)
+            write_df_to_sheet(sheet, hoja, df_final)
+            st.success(f"{hoja} copiado correctamente.")
+        except Exception as e:
+            st.error(f"Error al copiar {hoja}: {e}")
 
 # === Leer cuentas ===
 try:
