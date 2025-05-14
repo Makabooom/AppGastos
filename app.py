@@ -1,4 +1,13 @@
-
+from functools import reduce
+from google_sheets import connect_to_sheet, read_sheet_as_df, write_df_to_sheet  # Módulo de Google Sheets personalizado
+from io import BytesIO
+from openpyxl import Workbook
+from openpyxl.chart import PieChart, Reference
+from openpyxl.utils.dataframe import dataframe_to_rows
+import datetime                                 # Para trabajar con fechas
+import matplotlib.pyplot as plt                 
+import pandas as pd                             # Para manejo de datos y estructuras tipo tabla
+import streamlit as st                          # Para construir la interfaz web
 
 def mostrar_editor(nombre_hoja, columnas_dropdown=None):
     try:
@@ -135,22 +144,14 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
         # Resetear checkbox
         st.session_state[f"confirm_{nombre_hoja}"] = False
 
-from io import BytesIO
-
 # ================================================================
 # App de Control Financiero Personal
 # Hecho por Macarena Mallea – Mayo 2025
 # ================================================================
 
 # === Importación de librerías necesarias ===
-import streamlit as st                          # Para construir la interfaz web
-import pandas as pd                             # Para manejo de datos y estructuras tipo tabla
-import datetime                                 # Para trabajar con fechas
-import matplotlib.pyplot as plt                 
 plt.style.use("dark_background")
 # Para generar gráficos
-from google_sheets import connect_to_sheet, read_sheet_as_df, write_df_to_sheet  # Módulo de Google Sheets personalizado
-from io import BytesIO
 
 # === Validación de PIN de acceso ===
 if "acceso_autorizado" not in st.session_state:
@@ -290,9 +291,6 @@ with col2:
 
 
 def generar_excel_resumen(mes, año, resumen, df_gas, df_aho, df_prov, df_deu, df_ing):
-    from openpyxl import Workbook
-    from openpyxl.chart import PieChart, Reference
-    from openpyxl.utils.dataframe import dataframe_to_rows
 
     wb = Workbook()
     ws = wb.active
@@ -552,8 +550,6 @@ def agrupar(df, campo, nombre):
 
 # Función para generar el histórico
 def generar_excel_historico(anio, hojas_dict):
-    from openpyxl import Workbook
-    from openpyxl.utils.dataframe import dataframe_to_rows
     output = BytesIO()
     wb = Workbook()
     wb.remove(wb.active)
@@ -576,7 +572,6 @@ df_evo_prov = agrupar(df_prov, "monto_usado", "Provisiones")
 df_evo_aho = agrupar(df_aho, "monto_ingreso", "Ahorros")
 
 # Unir todas las tablas
-from functools import reduce
 frames = [df_evo_ing, df_evo_gas, df_evo_deu, df_evo_prov, df_evo_aho]
 df_evolucion = reduce(lambda left, right: pd.merge(left, right, on=["año", "mes"], how="outer"), frames)
 df_evolucion.fillna(0, inplace=True)  # Reemplazar nulos
