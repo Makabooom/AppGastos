@@ -478,8 +478,7 @@ with main_tabs[3]:
                 dfs_año = {}
 
                 for hoja in hojas:
-                    df = read_sheet_as_df(sheet, hoja)
-
+                    df = df_hojas.get(hoja, pd.DataFrame())
                     # Guardar mensual
                     if "mes" in df.columns and "año" in df.columns:
                         df_mes = df[(df["mes"] == mes) & (df["año"] == año)]
