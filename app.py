@@ -185,49 +185,12 @@ except:
 # === Selección centralizada de mes y año ===
 if st.session_state.acceso_autorizado:
     if st.session_state.acceso_autorizado:
-        # Selección de mes y año
-        today = datetime.date.today()
-        col1, col2 = st.columns(2)
-        with col1:
-            mes = st.selectbox("Mes", list(range(1, 13)), index=today.month - 1)
-        with col2:
-            año = st.selectbox("Año", list(range(2024, 2031)), index=1)
+    if st.session_state.acceso_autorizado:
+    # Selección de mes y año
+    
 
     # Tabs principales
-    tabs = st.tabs(["📊 Resumen", "📋 Datos Detallados", "📈 Reportes"])
-
-    with tabs[0]:
-        st.header("📊 Resumen General")
-        st.write("Aquí irá el resumen general del mes (ingresos, gastos, saldo, etc).")
-
-    with tabs[1]:
-        st.header("📋 Datos Detallados")
-        sub_tabs = st.tabs([
-            "💸 Ingresos",
-            "🏠 Gastos Fijos",
-            "🏦 Provisiones",
-            "📉 Deudas",
-            "💰 Ahorros",
-            "📦 Reservas"
-        ])
-
-        with sub_tabs[0]:
-            mostrar_editor("Ingresos")
-        with sub_tabs[1]:
-            mostrar_editor("Gastos Fijos")
-        with sub_tabs[2]:
-            mostrar_editor("Provisiones")
-        with sub_tabs[3]:
-            mostrar_editor("Deudas")
-        with sub_tabs[4]:
-            mostrar_editor("Ahorros")
-        with sub_tabs[5]:
-            mostrar_editor("Reservas Familiares")
-
-    with tabs[2]:
-        st.header("📈 Reportes y Análisis")
-        st.write("Aquí se mostrarán gráficos por categoría, evolución mensual, top gastos, etc.")
-
+    
     tabs = st.tabs(["📊 Resumen", "📋 Datos Detallados", "📈 Reportes"])
 
     with tabs[0]:
@@ -284,9 +247,9 @@ if st.session_state.acceso_autorizado:
 today = datetime.date.today()
 col1, col2 = st.columns(2)
 with col1:
-    mes = st.selectbox("Mes", list(range(1, 13)), index=today.month - 1)  # Selección del mes actual
+    mes = st.selectbox("Mes", list(range(1, 13)), index=today.month - 1, key="mes_selector")  # Selección del mes actual
 with col2:
-    año = st.selectbox("Año", list(range(2024, 2031)), index=1)  # Selección del año
+    año = st.selectbox("Año", list(range(2024, 2031)), index=1, key="año_selector")  # Selección del año
 
 
 def generar_excel_resumen(mes, año, resumen, df_gas, df_aho, df_prov, df_deu, df_ing):
