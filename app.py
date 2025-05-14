@@ -5,7 +5,7 @@ from google_sheets import connect_to_sheet, read_sheet_as_df, write_df_to_sheet
 
 # === Banner y título ===
 st.image("banner_makaboom.png", use_container_width=True)
-
+st.title("📋 AppGastos V1")
 
 # === Validación de acceso ===
 def validar_clave():
@@ -25,52 +25,13 @@ if not st.session_state.acceso_autorizado:
 SHEET_KEY = "1OPCAwKXoEHBmagpvkhntywqkAit7178pZv3ptXd9d9w"
 sheet = connect_to_sheet(st.secrets["credentials"], SHEET_KEY)
 
-
-# === Cálculo de mes/año actual y siguiente ===
+# === Selección de mes y año ===
 today = datetime.date.today()
-mes = st.session_state.get("mes_actual", today.month)
-año = st.session_state.get("año_actual", today.year)
-
-col1, col2, col3 = st.columns([2, 2, 2])
+col1, col2 = st.columns(2)
 with col1:
-    st.markdown(f"### Mes actual: {mes}")
+    mes = st.selectbox("Mes", list(range(1, 13)), index=today.month - 1, key="mes_selector")
 with col2:
-    st.markdown(f"### Año actual: {año}")
-with col3:
-    if st.button("📅 Comenzar mes siguiente"):
-        nuevo_mes = 1 if mes == 12 else mes + 1
-        nuevo_año = año + 1 if mes == 12 else año
-
-        hojas_a_copiar = ["Ingresos", "Provisiones", "Gastos Fijos", "Ahorros"]
-
-        for hoja in hojas_a_copiar:
-            try:
-                df = read_sheet_as_df(sheet, hoja)
-                if "mes" in df.columns and "año" in df.columns:
-                    df_prev = df[(df["mes"] == mes) & (df["año"] == año)].copy()
-                    df_prev["mes"] = nuevo_mes
-                    df_prev["año"] = nuevo_año
-
-                    # Ajustes por hoja
-                    if hoja == "Provisiones":
-                        if "se_usó" in df_prev.columns:
-                            df_prev["se_usó"] = "No"
-                    if hoja == "Gastos Fijos":
-                        if "estado" in df_prev.columns:
-                            df_prev["estado"] = "Pendiente"
-                    if hoja == "Deudas":
-                        if "cuota_mes" in df_prev.columns:
-                            df_prev["cuota_mes"] = 0
-
-                    df = pd.concat([df, df_prev], ignore_index=True)
-                    write_df_to_sheet(sheet, hoja, df)
-            except Exception as e:
-                st.warning(f"No se pudo copiar {hoja}: {e}")
-
-        st.session_state["mes_actual"] = nuevo_mes
-        st.session_state["año_actual"] = nuevo_año
-        st.success(f"Se inició el mes {nuevo_mes}/{nuevo_año}.")
-
+    año = st.selectbox("Año", list(range(2024, 2031)), index=1, key="año_selector")
 
 # === Leer cuentas ===
 try:
@@ -116,32 +77,16 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
         st.success(f"{nombre_hoja} actualizado correctamente.")
 
 # === Tabs para mostrar categorías dentro de "Datos Detallados" ===
-main_tabs = st.tabs([ 
-    "📊 Resumen General",
-    "🔔 Alertas",
-    "📋 Datos Detallados",
-    "📈 Reportes y Análisis"
-])
+main_tabs = st.tabs(["📋 Datos Detallados"])
 
-#Resumen General
 with main_tabs[0]:
-    st.subheader("📊 Resumen General")
-
-#Alertas
-with main_tabs[1]:
-    st.subheader("🔔 Alertas")
-
-#Datos Detallados
-with main_tabs[2]:
-    st.subheader("📋 Datos Detallados")
     sub_tabs = st.tabs([
         "📥 Ingresos", 
         "🧾 Provisiones", 
         "💡 Gastos Fijos", 
         "🏦 Ahorros", 
         "👨‍👩‍👧‍👦 Reservas Familiares", 
-        "💳 Deudas",
-        "⚙️ Configuración"
+        "💳 Deudas"
     ])
 
     with sub_tabs[0]: mostrar_editor("Ingresos", columnas_dropdown=["cuenta"])
@@ -150,29 +95,29 @@ with main_tabs[2]:
     with sub_tabs[3]: mostrar_editor("Ahorros", columnas_dropdown=["cuenta"])
     with sub_tabs[4]: mostrar_editor("Reservas Familiares", columnas_dropdown=["cuenta"])
     with sub_tabs[5]: mostrar_editor("Deudas")
-    with sub_tabs[6]:
-        st.subheader("🏦 Cuentas")
-        try:
-            df_cuentas = read_sheet_as_df(sheet, "Cuentas")
-        except:
-            st.warning("No se pudo cargar la hoja 'Cuentas'")
-            df_cuentas = pd.DataFrame(columns=["nombre_cuenta", "banco", "tipo"])
-
-        edited_cuentas = st.data_editor(
-            df_cuentas,
-            num_rows="dynamic",
-            use_container_width=True
-        )
-
-        if st.button("💾 Guardar cambios en Cuentas"):
-            # Validación básica
-            if edited_cuentas["nombre_cuenta"].isnull().any() or edited_cuentas["nombre_cuenta"].duplicated().any():
-                st.error("No se permiten nombres vacíos ni duplicados.")
-            else:
-                write_df_to_sheet(sheet, "Cuentas", edited_cuentas)
-                st.success("Cuentas actualizadas correctamente.")
 
 
-#Reportes y Análisis
-with main_tabs[3]:
-    st.subheader("📈 Reportes y Análisis")
+# === Pestaña de Configuración ===
+config_tabs = st.tabs(["⚙️ Configuración"])
+
+with config_tabs[0]:
+    st.subheader("🏦 Cuentas")
+    try:
+        df_cuentas = read_sheet_as_df(sheet, "Cuentas")
+    except:
+        st.warning("No se pudo cargar la hoja 'Cuentas'")
+        df_cuentas = pd.DataFrame(columns=["nombre_cuenta", "banco", "tipo"])
+
+    edited_cuentas = st.data_editor(
+        df_cuentas,
+        num_rows="dynamic",
+        use_container_width=True
+    )
+
+    if st.button("💾 Guardar cambios en Cuentas"):
+        # Validación básica
+        if edited_cuentas["nombre_cuenta"].isnull().any() or edited_cuentas["nombre_cuenta"].duplicated().any():
+            st.error("No se permiten nombres vacíos ni duplicados.")
+        else:
+            write_df_to_sheet(sheet, "Cuentas", edited_cuentas)
+            st.success("Cuentas actualizadas correctamente.")
