@@ -77,7 +77,12 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
         st.success(f"{nombre_hoja} actualizado correctamente.")
 
 # === Tabs para mostrar categorías dentro de "Datos Detallados" ===
-main_tabs = st.tabs(["📋 Datos Detallados"])
+main_tabs = st.tabs([ 
+    "📊 Resumen General",
+    "🔔 Alertas",
+    "📋 Datos Detallados",
+    "📈 Reportes y Análisis"
+])
 
 with main_tabs[0]:
     sub_tabs = st.tabs([
