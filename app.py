@@ -41,6 +41,7 @@ with col1:
 with col2:
     año = st.selectbox("Año", list(range(2024, 2031)), index=1, key="año_selector")
 with col3:
+    st.markdown("<br>", unsafe_allow_html=True)  # Esto empuja el botón hacia abajo
     if st.button("➡️ Ir a nuevo mes", help="Duplicar datos al mes siguiente"):
         nuevo_mes, nuevo_año = obtener_mes_siguiente(mes, año)
         st.info(f"Creando datos para {nuevo_mes}/{nuevo_año}...")
