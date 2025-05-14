@@ -81,6 +81,14 @@ with col3:
         st.session_state["mes_selector"] = nuevo_mes
         st.session_state["año_selector"] = nuevo_año
 
+# === Lectura centralizada de hojas ===
+hojas = ["Ingresos", "Gastos Fijos", "Deudas", "Provisiones", "Ahorros", "Reservas Familiares"]
+df_hojas = {}
+for hoja in hojas:
+    try:
+        df_hojas[hoja] = read_sheet_as_df(sheet, hoja)
+    except:
+        df_hojas[hoja] = pd.DataFrame()
 
 # === Leer cuentas ===
 try:
