@@ -1,15 +1,56 @@
-from functools import reduce
-from google_sheets import connect_to_sheet, read_sheet_as_df, write_df_to_sheet  # Módulo de Google Sheets personalizado
-from io import BytesIO
-from openpyxl import Workbook
-from openpyxl.chart import PieChart, Reference
-from openpyxl.utils.dataframe import dataframe_to_rows
+# ================================================================
+# App de Control Financiero Personal
+# Hecho por Macarena Mallea – Mayo 2025
+# ================================================================
+
+# === Importación de librerías necesarias ===
+import streamlit as st                          # Para construir la interfaz web
+import pandas as pd                             # Para manejo de datos y estructuras tipo tabla
 import datetime                                 # Para trabajar con fechas
 import matplotlib.pyplot as plt                 
-import pandas as pd                             # Para manejo de datos y estructuras tipo tabla
-import streamlit as st                          # Para construir la interfaz web
+plt.style.use("dark_background")
+# Para generar gráficos
+from google_sheets import connect_to_sheet, read_sheet_as_df, write_df_to_sheet  # Módulo de Google Sheets personalizado
+from io import BytesIO
 
-# === Conexión con Google Sheets ===
+# === Validación de PIN de acceso ===
+if "acceso_autorizado" not in st.session_state:
+    st.session_state.acceso_autorizado = False
+
+if not st.session_state.acceso_autorizado:
+    st.title("🔐 Acceso protegido")
+    pin_ingresado = st.text_input("Ingresa tu PIN:", type="password")
+
+    if st.button("🔓 Ingresar"):
+        if pin_ingresado == st.secrets["security"]["pin"]:
+            st.session_state.acceso_autorizado = True
+            st.success("Acceso concedido. Bienvenida 👋")
+        else:
+            st.error("PIN incorrecto.")
+
+    if not st.session_state.acceso_autorizado:
+        st.stop()  # Detener ejecución si no está autorizada
+
+# === Conectarse al Google Sheet usando credenciales seguras ===
+SHEET_KEY = "1OPCAwKXoEHBmagpvkhntywqkAit7178pZv3ptXd9d9w"  # ID del documento en Google Sheets
+sheet = connect_to_sheet(st.secrets["credentials"], SHEET_KEY)  # Conexión autenticada
+
+# === Leer lista de cuentas bancarias desde la hoja "Cuentas" ===
+try:
+    df_cuentas = read_sheet_as_df(sheet, "Cuentas")  # Obtener la hoja
+    lista_cuentas = df_cuentas["nombre_cuenta"].dropna().unique().tolist()  # Lista desplegable
+except:
+    lista_cuentas = []  # Si falla, dejar la lista vacía
+
+# === Selección centralizada de mes y año ===
+st.image("banner_makaboom.png", use_column_width=True)
+st.title("📋 Control Financiero Personal")
+today = datetime.date.today()
+col1, col2 = st.columns(2)
+with col1:
+    mes = st.selectbox("Mes", list(range(1, 13)), index=today.month - 1)  # Selección del mes actual
+with col2:
+    año = st.selectbox("Año", list(range(2024, 2031)), index=1)  # Selección del año
 
 def mostrar_editor(nombre_hoja, columnas_dropdown=None):
     try:
@@ -146,8 +187,12 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
         # Resetear checkbox
         st.session_state[f"confirm_{nombre_hoja}"] = False
 
+from io import BytesIO
 
 def generar_excel_resumen(mes, año, resumen, df_gas, df_aho, df_prov, df_deu, df_ing):
+    from openpyxl import Workbook
+    from openpyxl.chart import PieChart, Reference
+    from openpyxl.utils.dataframe import dataframe_to_rows
 
     wb = Workbook()
     ws = wb.active
@@ -399,7 +444,6 @@ with st.expander("📊 Ver resumen del mes actual", expanded=True):
 st.subheader("📈 Evolución mensual (últimos 12 meses)")
 
 # Funcón para agrupar por mes y año
-
 def agrupar(df, campo, nombre):
     if campo in df.columns:
         return df.groupby(["año", "mes"])[campo].sum().reset_index(name=nombre)
@@ -407,8 +451,9 @@ def agrupar(df, campo, nombre):
         return pd.DataFrame(columns=["año", "mes", nombre])
 
 # Función para generar el histórico
-
 def generar_excel_historico(anio, hojas_dict):
+    from openpyxl import Workbook
+    from openpyxl.utils.dataframe import dataframe_to_rows
     output = BytesIO()
     wb = Workbook()
     wb.remove(wb.active)
@@ -431,6 +476,7 @@ df_evo_prov = agrupar(df_prov, "monto_usado", "Provisiones")
 df_evo_aho = agrupar(df_aho, "monto_ingreso", "Ahorros")
 
 # Unir todas las tablas
+from functools import reduce
 frames = [df_evo_ing, df_evo_gas, df_evo_deu, df_evo_prov, df_evo_aho]
 df_evolucion = reduce(lambda left, right: pd.merge(left, right, on=["año", "mes"], how="outer"), frames)
 df_evolucion.fillna(0, inplace=True)  # Reemplazar nulos
@@ -631,108 +677,3 @@ try:
 
 except Exception as e:
     st.error("No se pudo generar la simulación.")
-
-
-# === Inicio del programa ===
-# ================================================================
-# App de Control Financiero Personal
-# Hecho por Macarena Mallea – Mayo 2025
-# ================================================================
-
-# === Importación de librerías necesarias ===
-plt.style.use("dark_background")
-# Para generar gráficos
-
-# === Validación de PIN de acceso ===
-if "acceso_autorizado" not in st.session_state:
-    st.session_state.acceso_autorizado = False
-
-if not st.session_state.acceso_autorizado:
-    st.title("🔐 Acceso protegido")
-    pin_ingresado = st.text_input("Ingresa tu PIN:", type="password")
-
-    if st.button("🔓 Ingresar"):
-        if pin_ingresado == st.secrets["security"]["pin"]:
-            st.session_state.acceso_autorizado = True
-            st.success("Acceso concedido. Bienvenida 👋")
-        else:
-            st.error("PIN incorrecto.")
-
-    if not st.session_state.acceso_autorizado:
-        st.stop()  # Detener ejecución si no está autorizada
-
-# === Conectarse al Google Sheet usando credenciales seguras ===
-SHEET_KEY = "1OPCAwKXoEHBmagpvkhntywqkAit7178pZv3ptXd9d9w"  # ID del documento en Google Sheets
-sheet = connect_to_sheet(st.secrets["credentials"], SHEET_KEY)  # Conexión autenticada
-
-# === Leer lista de cuentas bancarias desde la hoja "Cuentas" ===
-try:
-    df_cuentas = read_sheet_as_df(sheet, "Cuentas")  # Obtener la hoja
-    lista_cuentas = df_cuentas["nombre_cuenta"].dropna().unique().tolist()  # Lista desplegable
-except:
-    lista_cuentas = []  # Si falla, dejar la lista vacía
-
-# === Selección centralizada de mes y año ===
-if st.session_state.acceso_autorizado:
-    if st.session_state.acceso_autorizado:
-        st.title("📋 Control Financiero Personal")
-
-    tabs = st.tabs(["📊 Resumen", "📋 Datos Detallados", "📈 Reportes"])
-
-    with tabs[0]:
-        st.header("📊 Resumen General")
-        st.write("Aquí irá el resumen general del mes (ingresos, gastos, saldo, etc).")
-
-    with tabs[1]:
-        st.header("📋 Datos Detallados")
-        sub_tabs = st.tabs([
-            "💸 Ingresos",
-            "🏠 Gastos Fijos",
-            "🏦 Provisiones",
-            "📉 Deudas",
-            "💰 Ahorros",
-            "📦 Reservas"
-        ])
-
-        with sub_tabs[0]:
-            mostrar_editor("Ingresos")
-
-        with sub_tabs[1]:
-            mostrar_editor("Gastos Fijos")
-
-        with sub_tabs[2]:
-            mostrar_editor("Provisiones")
-
-        with sub_tabs[3]:
-            mostrar_editor("Deudas")
-
-        with sub_tabs[4]:
-            mostrar_editor("Ahorros")
-
-        with sub_tabs[5]:
-            mostrar_editor("Reservas Familiares")
-
-    with tabs[2]:
-        st.header("📈 Reportes y Análisis")
-        st.write("Aquí se mostrarán gráficos por categoría, evolución mensual, top gastos, etc.")
-
-    tabs = st.tabs(["📊 Resumen", "📋 Datos", "📈 Reportes"])
-
-    with tabs[0]:
-        st.header("📊 Resumen General")
-        st.write("Aquí irá el resumen general del mes (ingresos, gastos, saldo, etc).")
-
-    with tabs[1]:
-        hojas_datos = ["Ahorros", "Gastos Fijos", "Reservas Familiares", "Deudas", "Ingresos", "Provisiones"]
-        for hoja in hojas_datos:
-            mostrar_editor(hoja)
-
-    with tabs[2]:
-        st.header("📈 Reportes y Análisis")
-        st.write("Aquí se mostrarán gráficos por categoría, evolución mensual, top gastos, etc.")
-today = datetime.date.today()
-col1, col2 = st.columns(2)
-with col1:
-    mes = st.selectbox("Mes", list(range(1, 13)), index=today.month - 1)  # Selección del mes actual
-with col2:
-    año = st.selectbox("Año", list(range(2024, 2031)), index=1)  # Selección del año
