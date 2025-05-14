@@ -43,7 +43,23 @@ except:
     lista_cuentas = []  # Si falla, dejar la lista vacía
 
 # === Selección centralizada de mes y año ===
-st.title("📋 Control Financiero Personal")
+if st.session_state.acceso_autorizado:
+    st.title("📋 Control Financiero Personal")
+
+    tabs = st.tabs(["📊 Resumen", "📋 Datos", "📈 Reportes"])
+
+    with tabs[0]:
+        st.header("📊 Resumen General")
+        st.write("Aquí irá el resumen general del mes (ingresos, gastos, saldo, etc).")
+
+    with tabs[1]:
+        hojas_datos = ["Ahorros", "Gastos Fijos", "Reservas Familiares", "Deudas", "Ingresos", "Provisiones"]
+        for hoja in hojas_datos:
+            mostrar_editor(hoja)
+
+    with tabs[2]:
+        st.header("📈 Reportes y Análisis")
+        st.write("Aquí se mostrarán gráficos por categoría, evolución mensual, top gastos, etc.")
 today = datetime.date.today()
 col1, col2 = st.columns(2)
 with col1:
