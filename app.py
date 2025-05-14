@@ -1,3 +1,9 @@
+def validar_clave():
+    if st.session_state.clave_ingresada == "1234":
+        st.session_state.acceso_autorizado = True
+    else:
+        st.error("Clave incorrecta")
+
 # ================================================================
 # App de Control Financiero Personal
 # Hecho por Macarena Mallea – Mayo 2025
@@ -43,6 +49,7 @@ except:
     lista_cuentas = []  # Si falla, dejar la lista vacía
 
 # === Selección centralizada de mes y año ===
+st.image("banner_makaboom.png", use_column_width=True)
 st.image("banner_makaboom.png", use_column_width=True)
 st.title("📋 Control Financiero Personal")
 today = datetime.date.today()
