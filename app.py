@@ -146,6 +146,13 @@ with main_tabs[0]:
         col2.metric("💸 Gastos Fijos", f"${total_gastos:,.0f}")
         col3.metric("💼 Saldo Disponible", f"${saldo:,.0f}")
 
+        if total_ingresos > 0:
+            porcentaje_gasto = min(total_gastos / total_ingresos, 1.0)
+            st.progress(porcentaje_gasto, text=f"{porcentaje_gasto * 100:.1f}% del ingreso mensual gastado")
+        else:
+            st.info("Aún no se han registrado ingresos para este mes.")
+
+
     except Exception as e:
         st.warning("No se pudo calcular el resumen financiero.")
         st.text(f"Error: {e}")
