@@ -150,7 +150,8 @@ with main_tabs[0]:
 
         # === Cálculos ===
         total_ingresos = ing_mes["monto"].sum()
-        gasto_normal = gf_pagados["monto"].sum() + deudas_mes["cuota_mes"].sum()
+        gasto_deudas = (deudas_mes["monto_cuota"] * deudas_mes["cuotas_mes"]).sum()
+        gasto_normal = gf_pagados["monto"].sum() + gasto_deudas
         gasto_provisiones = provisiones_mes["monto_usado"].sum()
         gasto_ahorros = ahorros_mes["monto_retirado"].sum()
         gasto_total = gasto_normal + gasto_provisiones + gasto_ahorros
