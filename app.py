@@ -535,12 +535,25 @@ with main_tabs[4]:
     nuevo_mes, nuevo_año = obtener_mes_siguiente(mes, año)
     st.markdown(f" Simulación para: **{nuevo_mes}/{nuevo_año}**")
 
+    # === Valores base desde el mes actual
+    df_ing = df_hojas["Ingresos"]
+    df_gas = df_hojas["Gastos Fijos"]
+    df_deu = df_hojas["Deudas"]
+    df_pro = df_hojas["Provisiones"]
+    df_aho = df_hojas["Ahorros"]
+
+    ingreso_real = df_ing[(df_ing["mes"] == mes) & (df_ing["año"] == año)]["monto"].sum()
+    gastos_fijos_reales = df_gas[(df_gas["mes"] == mes) & (df_gas["año"] == año) & (df_gas["estado"].str.lower() == "pagado")]["monto"].sum()
+    provisiones_real = df_pro[(df_pro["mes"] == mes) & (df_pro["año"] == año)]["monto"].sum()
+    ahorro_real = df_aho[(df_aho["mes"] == mes) & (df_aho["año"] == año)]["monto_ingreso"].sum()
+    deudas_real = (df_deu[(df_deu["mes"] == mes) & (df_deu["año"] == año)]["monto_cuota"] * df_deu["cuotas_mes"]).sum()
+
     # Entradas del usuario
-    ingreso_simulado = st.number_input("💰 Ingreso estimado", min_value=0, value=500000, step=10000)
-    gasto_estimado = st.number_input("💸 Gastos fijos esperados", min_value=0, value=300000, step=10000)
-    provisiones_estimadas = st.number_input("🏷️ Provisiones a guardar", min_value=0, value=50000, step=10000)
-    ahorro_estimado = st.number_input("🏦 Ahorro previsto", min_value=0, value=30000, step=10000)
-    deuda_estimadas = st.number_input("💳 Pago de deudas estimado", min_value=0, value=40000, step=10000)
+    ingreso_simulado = st.number_input("💰 Ingreso estimado", min_value=0, value=int(ingreso_real), step=10000)
+    gasto_estimado = st.number_input("💸 Gastos fijos esperados", min_value=0, value=int(gastos_fijos_reales), step=10000)
+    provisiones_estimadas = st.number_input("🏷️ Provisiones a guardar", min_value=0, value=int(provisiones_real), step=10000)
+    ahorro_estimado = st.number_input("🏦 Ahorro previsto", min_value=0, value=int(ahorro_real), step=10000)
+    deuda_estimadas = st.number_input("💳 Pago de deudas estimado", min_value=0, value=int(deudas_real), step=10000)
 
     # Cálculos
     gasto_total = gasto_estimado + deuda_estimadas
@@ -551,4 +564,23 @@ with main_tabs[4]:
     col1, col2 = st.columns(2)
     col1.metric("💸 Gasto Total", f"${gasto_total:,.0f}")
     col2.metric("🧮 Saldo Disponible", f"${saldo_proyectado:,.0f}")
+
+    # === Gráfico de distribución proyectada del ingreso ===
+    st.markdown(" 🧁 Distribución del ingreso simulado")
+
+    restante = max(ingreso_simulado - gasto_total - provisiones_estimadas - ahorro_estimado, 0)
+
+    etiquetas = ["Gastos fijos + Deudas", "Provisiones", "Ahorros", "Saldo Libre"]
+    valores = [gasto_total, provisiones_estimadas, ahorro_estimado, restante]
+
+    if ingreso_simulado == 0 or sum(valores) == 0:
+        st.info("No hay ingreso simulado para mostrar la distribución.")
+    else:
+        import matplotlib.pyplot as plt
+        plt.style.use("dark_background")
+        fig, ax = plt.subplots()
+        ax.pie(valores, labels=etiquetas, autopct="%1.1f%%", startangle=90)
+        ax.set_title("Distribución proyectada del ingreso")
+        st.pyplot(fig)
+
 
