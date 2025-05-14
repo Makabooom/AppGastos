@@ -29,8 +29,6 @@ if "acceso_autorizado" not in st.session_state:
 
 if not st.session_state.acceso_autorizado:
     st.title("🔐 Acceso protegido")
-    pin_ingresado = st.text_input("Ingresa tu PIN:", type="password")
-
     st.text_input("Ingresa tu PIN:", type="password", key="pin_clave", on_change=validar_clave)
 
     if not st.session_state.acceso_autorizado:
