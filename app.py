@@ -185,14 +185,13 @@ except:
 # === Selección centralizada de mes y año ===
 if st.session_state.acceso_autorizado:
     if st.session_state.acceso_autorizado:
-    if st.session_state.acceso_autorizado:
-    # Selección de mes y año
-    today = datetime.date.today()
-    col1, col2 = st.columns(2)
-    with col1:
-        mes = st.selectbox("Mes", list(range(1, 13)), index=today.month - 1)
-    with col2:
-        año = st.selectbox("Año", list(range(2024, 2031)), index=1)
+        # Selección de mes y año
+        today = datetime.date.today()
+        col1, col2 = st.columns(2)
+        with col1:
+            mes = st.selectbox("Mes", list(range(1, 13)), index=today.month - 1)
+        with col2:
+            año = st.selectbox("Año", list(range(2024, 2031)), index=1)
 
     # Tabs principales
     tabs = st.tabs(["📊 Resumen", "📋 Datos Detallados", "📈 Reportes"])
