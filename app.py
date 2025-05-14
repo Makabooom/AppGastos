@@ -360,19 +360,12 @@ with main_tabs[3]:
             # === Gráfico en modo oscuro ===
             import matplotlib.pyplot as plt
 
-def autopct_monto(pct, valores):
-    total = sum(valores)
-    valor = int(round(pct * total / 100.0))
-    return f"{pct:.1f}%\n$ {valor:,}".replace(",", ".")
-
             plt.style.use("dark_background")
             fig, ax = plt.subplots()
             ax.bar(df_merge["periodo"], df_merge["ingresos"], label="Ingresos", color="#4CAF50")
             ax.bar(df_merge["periodo"], df_merge["gastos_totales"], label="Gastos", color="#F44336", alpha=0.7)
             ax.set_title("Ingresos vs Gastos Totales por Mes")
             ax.set_ylabel("CLP")
-import matplotlib.ticker as mticker
-ax.get_yaxis().set_major_formatter(mticker.FuncFormatter(lambda x, _: f"$ {int(x):,}".replace(",", ".")))
             ax.legend()
             ax.tick_params(axis='x', rotation=45)
 
@@ -411,14 +404,9 @@ ax.get_yaxis().set_major_formatter(mticker.FuncFormatter(lambda x, _: f"$ {int(x
                 st.info("No se han registrado gastos este mes.")
             else:
                 import matplotlib.pyplot as plt
-
-def autopct_monto(pct, valores):
-    total = sum(valores)
-    valor = int(round(pct * total / 100.0))
-    return f"{pct:.1f}%\n$ {valor:,}".replace(",", ".")
                 plt.style.use("dark_background")
                 fig, ax = plt.subplots()
-                ax.pie(valores, labels=labels, autopct=lambda pct: autopct_monto(pct, valores), startangle=90)
+                ax.pie(valores, labels=labels, autopct="%1.1f%%", startangle=90)
                 ax.set_title("Distribución del Gasto por Origen")
                 st.pyplot(fig)
 
@@ -468,11 +456,6 @@ def autopct_monto(pct, valores):
 
             # Gráfico
             import matplotlib.pyplot as plt
-
-def autopct_monto(pct, valores):
-    total = sum(valores)
-    valor = int(round(pct * total / 100.0))
-    return f"{pct:.1f}%\n$ {valor:,}".replace(",", ".")
             plt.style.use("dark_background")
             fig, ax = plt.subplots()
             ax.plot(df_merge["periodo"], df_merge["ingresos"], label="Ingresos", marker="o", color="#4CAF50")
@@ -481,8 +464,6 @@ def autopct_monto(pct, valores):
 
             ax.set_title("Evolución de Ingresos, Gastos y Saldo Real")
             ax.set_ylabel("CLP")
-import matplotlib.ticker as mticker
-ax.get_yaxis().set_major_formatter(mticker.FuncFormatter(lambda x, _: f"$ {int(x):,}".replace(",", ".")))
             ax.set_xlabel("Mes/Año")
             ax.tick_params(axis="x", rotation=45)
             ax.legend()
@@ -601,14 +582,9 @@ with main_tabs[4]:
         st.info("No hay ingreso simulado para mostrar la distribución.")
     else:
         import matplotlib.pyplot as plt
-
-def autopct_monto(pct, valores):
-    total = sum(valores)
-    valor = int(round(pct * total / 100.0))
-    return f"{pct:.1f}%\n$ {valor:,}".replace(",", ".")
         plt.style.use("dark_background")
         fig, ax = plt.subplots()
-        ax.pie(valores, labels=etiquetas, autopct=lambda pct: autopct_monto(pct, valores), startangle=90)
+        ax.pie(valores, labels=etiquetas, autopct="%1.1f%%", startangle=90)
         ax.set_title("Distribución proyectada del ingreso")
         st.pyplot(fig)
 
