@@ -45,7 +45,7 @@ except:
 # === Selección centralizada de mes y año ===
 if st.session_state.acceso_autorizado:
     if st.session_state.acceso_autorizado:
-    st.title("📋 Control Financiero Personal")
+        st.title("📋 Control Financiero Personal")
 
     tabs = st.tabs(["📊 Resumen", "📋 Datos Detallados", "📈 Reportes"])
 
