@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import datetime
 from google_sheets import connect_to_sheet, read_sheet_as_df, write_df_to_sheet
+import io
+from openpyxl import Workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
 
 # === Banner ===
 st.image("banner_makaboom.png", use_container_width=True)
@@ -458,8 +461,66 @@ with main_tabs[3]:
                 st.text(f"Error: {e}")
 
 
-        with rep_tabs[2]:  
-            st.markdown("📤 Exportar Resumen")           
+        with rep_tabs[3]:  
+            st.markdown("### 📤 Exportar tus datos")
+            try:
+                # Leer todas las hojas filtradas por año y/o mes
+                hojas = ["Ingresos", "Gastos Fijos", "Deudas", "Provisiones", "Ahorros", "Reservas Familiares"]
+                dfs_mes = {}
+                dfs_año = {}
+
+                for hoja in hojas:
+                    df = read_sheet_as_df(sheet, hoja)
+
+                    # Guardar mensual
+                    if "mes" in df.columns and "año" in df.columns:
+                        df_mes = df[(df["mes"] == mes) & (df["año"] == año)]
+                        df_año = df[df["año"] == año]
+                    else:
+                        df_mes = df.copy()
+                        df_año = df.copy()
+
+                    dfs_mes[hoja] = df_mes
+                    dfs_año[hoja] = df_año
+
+                # === Botón para descargar resumen mensual
+                if st.button("📥 Descargar resumen mensual en Excel"):
+                    output = io.BytesIO()
+                    wb = Workbook()
+                    for nombre, df in dfs_mes.items():
+                        ws = wb.create_sheet(title=nombre[:31])
+                        for r in dataframe_to_rows(df, index=False, header=True):
+                            ws.append(r)
+                    wb.remove(wb["Sheet"])
+                    wb.save(output)
+                    st.download_button(
+                        label="⬇️ Descargar archivo mensual",
+                        data=output.getvalue(),
+                        file_name=f"Resumen_{mes}_{año}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+
+                # === Botón para descargar resumen anual
+                if st.button("📥 Descargar histórico anual en Excel"):
+                    output = io.BytesIO()
+                    wb = Workbook()
+                    for nombre, df in dfs_año.items():
+                        ws = wb.create_sheet(title=nombre[:31])
+                        for r in dataframe_to_rows(df, index=False, header=True):
+                            ws.append(r)
+                    wb.remove(wb["Sheet"])
+                    wb.save(output)
+                    st.download_button(
+                        label="⬇️ Descargar archivo anual",
+                        data=output.getvalue(),
+                        file_name=f"Resumen_Anual_{año}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+
+            except Exception as e:
+                st.error("No se pudo generar el archivo para exportar.")
+                st.text(f"Error: {e}")
+
         
 with main_tabs[4]:
         st.subheader("🧮 “Simulador”")  
