@@ -76,19 +76,22 @@ def mostrar_editor(nombre_hoja, columnas_dropdown=None):
         write_df_to_sheet(sheet, nombre_hoja, df_final)
         st.success(f"{nombre_hoja} actualizado correctamente.")
 
-# === Tabs para mostrar cada categoría ===
-tabs = st.tabs([
-    "📥 Ingresos", 
-    "🧾 Provisiones", 
-    "💡 Gastos Fijos", 
-    "🏦 Ahorros", 
-    "👨‍👩‍👧‍👦 Reservas Familiares", 
-    "💳 Deudas"
-])
+# === Tabs para mostrar categorías dentro de "Datos Detallados" ===
+main_tabs = st.tabs(["📋 Datos Detallados"])
 
-with tabs[0]: mostrar_editor("Ingresos", columnas_dropdown=["cuenta"])
-with tabs[1]: mostrar_editor("Provisiones")
-with tabs[2]: mostrar_editor("Gastos Fijos", columnas_dropdown=["cuenta_pago"])
-with tabs[3]: mostrar_editor("Ahorros", columnas_dropdown=["cuenta"])
-with tabs[4]: mostrar_editor("Reservas Familiares", columnas_dropdown=["cuenta"])
-with tabs[5]: mostrar_editor("Deudas")
+with main_tabs[0]:
+    sub_tabs = st.tabs([
+        "📥 Ingresos", 
+        "🧾 Provisiones", 
+        "💡 Gastos Fijos", 
+        "🏦 Ahorros", 
+        "👨‍👩‍👧‍👦 Reservas Familiares", 
+        "💳 Deudas"
+    ])
+
+    with sub_tabs[0]: mostrar_editor("Ingresos", columnas_dropdown=["cuenta"])
+    with sub_tabs[1]: mostrar_editor("Provisiones")
+    with sub_tabs[2]: mostrar_editor("Gastos Fijos", columnas_dropdown=["cuenta_pago"])
+    with sub_tabs[3]: mostrar_editor("Ahorros", columnas_dropdown=["cuenta"])
+    with sub_tabs[4]: mostrar_editor("Reservas Familiares", columnas_dropdown=["cuenta"])
+    with sub_tabs[5]: mostrar_editor("Deudas")
