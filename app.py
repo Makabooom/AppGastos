@@ -5,7 +5,7 @@ from google_sheets import connect_to_sheet, read_sheet_as_df, write_df_to_sheet
 
 # === Banner y título ===
 st.image("banner_makaboom.png", use_container_width=True)
-st.title("📋 AppGastos V1")
+
 
 # === Validación de acceso ===
 def validar_clave():
@@ -25,13 +25,52 @@ if not st.session_state.acceso_autorizado:
 SHEET_KEY = "1OPCAwKXoEHBmagpvkhntywqkAit7178pZv3ptXd9d9w"
 sheet = connect_to_sheet(st.secrets["credentials"], SHEET_KEY)
 
-# === Selección de mes y año ===
+
+# === Cálculo de mes/año actual y siguiente ===
 today = datetime.date.today()
-col1, col2 = st.columns(2)
+mes = st.session_state.get("mes_actual", today.month)
+año = st.session_state.get("año_actual", today.year)
+
+col1, col2, col3 = st.columns([2, 2, 2])
 with col1:
-    mes = st.selectbox("Mes", list(range(1, 13)), index=today.month - 1, key="mes_selector")
+    st.markdown(f"### Mes actual: {mes}")
 with col2:
-    año = st.selectbox("Año", list(range(2024, 2031)), index=1, key="año_selector")
+    st.markdown(f"### Año actual: {año}")
+with col3:
+    if st.button("📅 Comenzar mes siguiente"):
+        nuevo_mes = 1 if mes == 12 else mes + 1
+        nuevo_año = año + 1 if mes == 12 else año
+
+        hojas_a_copiar = ["Ingresos", "Provisiones", "Gastos Fijos", "Ahorros"]
+
+        for hoja in hojas_a_copiar:
+            try:
+                df = read_sheet_as_df(sheet, hoja)
+                if "mes" in df.columns and "año" in df.columns:
+                    df_prev = df[(df["mes"] == mes) & (df["año"] == año)].copy()
+                    df_prev["mes"] = nuevo_mes
+                    df_prev["año"] = nuevo_año
+
+                    # Ajustes por hoja
+                    if hoja == "Provisiones":
+                        if "se_usó" in df_prev.columns:
+                            df_prev["se_usó"] = "No"
+                    if hoja == "Gastos Fijos":
+                        if "estado" in df_prev.columns:
+                            df_prev["estado"] = "Pendiente"
+                    if hoja == "Deudas":
+                        if "cuota_mes" in df_prev.columns:
+                            df_prev["cuota_mes"] = 0
+
+                    df = pd.concat([df, df_prev], ignore_index=True)
+                    write_df_to_sheet(sheet, hoja, df)
+            except Exception as e:
+                st.warning(f"No se pudo copiar {hoja}: {e}")
+
+        st.session_state["mes_actual"] = nuevo_mes
+        st.session_state["año_actual"] = nuevo_año
+        st.success(f"Se inició el mes {nuevo_mes}/{nuevo_año}.")
+
 
 # === Leer cuentas ===
 try:
