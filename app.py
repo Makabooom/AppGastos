@@ -86,7 +86,8 @@ with main_tabs[0]:
         "💡 Gastos Fijos", 
         "🏦 Ahorros", 
         "👨‍👩‍👧‍👦 Reservas Familiares", 
-        "💳 Deudas"
+        "💳 Deudas",
+        "⚙️ Configuración"
     ])
 
     with sub_tabs[0]: mostrar_editor("Ingresos", columnas_dropdown=["cuenta"])
@@ -95,29 +96,24 @@ with main_tabs[0]:
     with sub_tabs[3]: mostrar_editor("Ahorros", columnas_dropdown=["cuenta"])
     with sub_tabs[4]: mostrar_editor("Reservas Familiares", columnas_dropdown=["cuenta"])
     with sub_tabs[5]: mostrar_editor("Deudas")
+    with sub_tabs[6]:
+        st.subheader("🏦 Cuentas")
+        try:
+            df_cuentas = read_sheet_as_df(sheet, "Cuentas")
+        except:
+            st.warning("No se pudo cargar la hoja 'Cuentas'")
+            df_cuentas = pd.DataFrame(columns=["nombre_cuenta", "banco", "tipo"])
 
+        edited_cuentas = st.data_editor(
+            df_cuentas,
+            num_rows="dynamic",
+            use_container_width=True
+        )
 
-# === Pestaña de Configuración ===
-config_tabs = st.tabs(["⚙️ Configuración"])
-
-with config_tabs[0]:
-    st.subheader("🏦 Cuentas")
-    try:
-        df_cuentas = read_sheet_as_df(sheet, "Cuentas")
-    except:
-        st.warning("No se pudo cargar la hoja 'Cuentas'")
-        df_cuentas = pd.DataFrame(columns=["nombre_cuenta", "banco", "tipo"])
-
-    edited_cuentas = st.data_editor(
-        df_cuentas,
-        num_rows="dynamic",
-        use_container_width=True
-    )
-
-    if st.button("💾 Guardar cambios en Cuentas"):
-        # Validación básica
-        if edited_cuentas["nombre_cuenta"].isnull().any() or edited_cuentas["nombre_cuenta"].duplicated().any():
-            st.error("No se permiten nombres vacíos ni duplicados.")
-        else:
-            write_df_to_sheet(sheet, "Cuentas", edited_cuentas)
-            st.success("Cuentas actualizadas correctamente.")
+        if st.button("💾 Guardar cambios en Cuentas"):
+            # Validación básica
+            if edited_cuentas["nombre_cuenta"].isnull().any() or edited_cuentas["nombre_cuenta"].duplicated().any():
+                st.error("No se permiten nombres vacíos ni duplicados.")
+            else:
+                write_df_to_sheet(sheet, "Cuentas", edited_cuentas)
+                st.success("Cuentas actualizadas correctamente.")
