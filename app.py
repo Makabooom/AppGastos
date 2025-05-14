@@ -28,11 +28,7 @@ if "acceso_autorizado" not in st.session_state:
 
 if not st.session_state.acceso_autorizado:
     st.title("🔐 Acceso protegido")
-    pin_ingresado = st.text_input("Ingresa tu PIN:", type="password")
-
-    if st.button("🔓 Ingresar"):
-        if pin_ingresado == st.secrets["security"]["pin"]:
-            st.session_state.acceso_autorizado = True
+    
             st.success("Acceso concedido. Bienvenida 👋")
         else:
             st.error("PIN incorrecto.")
