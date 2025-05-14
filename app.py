@@ -134,24 +134,52 @@ with main_tabs[0]:
     st.subheader("📊 Resumen General")
     #=== RESUMEN GRAL
     try:
+        # === Leer hojas ===
         df_ing = read_sheet_as_df(sheet, "Ingresos")
-        df_gas = read_sheet_as_df(sheet, "Gastos Fijos")
+        df_gastos = read_sheet_as_df(sheet, "Gastos Fijos")
+        df_deudas = read_sheet_as_df(sheet, "Deudas")
+        df_provisiones = read_sheet_as_df(sheet, "Provisiones")
+        df_ahorros = read_sheet_as_df(sheet, "Ahorros")
 
-        total_ingresos = df_ing[(df_ing["mes"] == mes) & (df_ing["año"] == año)]["monto"].sum()
-        total_gastos = df_gas[(df_gas["mes"] == mes) & (df_gas["año"] == año)]["monto"].sum()
-        saldo = total_ingresos - total_gastos
+        # === Filtros por mes y año ===
+        ing_mes = df_ing[(df_ing["mes"] == mes) & (df_ing["año"] == año)]
+        gf_pagados = df_gastos[(df_gastos["mes"] == mes) & (df_gastos["año"] == año) & (df_gastos["estado"].str.lower() == "pagado")]
+        deudas_mes = df_deudas[(df_deudas["mes"] == mes) & (df_deudas["año"] == año)]
+        provisiones_mes = df_provisiones[(df_provisiones["mes"] == mes) & (df_provisiones["año"] == año)]
+        ahorros_mes = df_ahorros[(df_ahorros["mes"] == mes) & (df_ahorros["año"] == año)]
 
+        # === Cálculos ===
+        total_ingresos = ing_mes["monto"].sum()
+        gasto_normal = gf_pagados["monto"].sum() + deudas_mes["cuota_mes"].sum()
+        gasto_provisiones = provisiones_mes["monto_usado"].sum()
+        gasto_ahorros = ahorros_mes["monto_retirado"].sum()
+        gasto_total = gasto_normal + gasto_provisiones + gasto_ahorros
+
+        provisiones_guardadas = provisiones_mes["monto"].sum()
+        ahorros_guardados = ahorros_mes["monto_ingreso"].sum()
+
+        saldo_real = total_ingresos - gasto_total - provisiones_guardadas - ahorros_guardados
+
+        st.markdown("#### 💸 Distribución del gasto mensual por origen")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("🧾 Desde Ingresos Normales", f"${gasto_normal:,.0f}")
+        col2.metric("🏷️ Desde Provisiones", f"${gasto_provisiones:,.0f}")
+        col3.metric("🏦 Desde Ahorros", f"${gasto_ahorros:,.0f}")
+        st.caption(f"💼 Gasto total del mes (sumado): ${gasto_total:,.0f}")
+
+
+        # === Mostrar métricas ===
         col1, col2, col3 = st.columns(3)
         col1.metric("💰 Ingresos Totales", f"${total_ingresos:,.0f}")
-        col2.metric("💸 Gastos Fijos", f"${total_gastos:,.0f}")
-        col3.metric("💼 Saldo Disponible", f"${saldo:,.0f}")
-
+        col2.metric("💸 Gasto Total (todos los orígenes)", f"${gasto_total:,.0f}")
+        col3.metric("🧮 Saldo Disponible Real", f"${saldo_real:,.0f}")
+        
+        # === Barra de progreso de uso del ingreso mensual ===
         if total_ingresos > 0:
-            porcentaje_gasto = min(total_gastos / total_ingresos, 1.0)
+            porcentaje_gasto = min(gasto_total / total_ingresos, 1.0)
             st.progress(porcentaje_gasto, text=f"{porcentaje_gasto * 100:.1f}% del ingreso mensual gastado")
         else:
             st.info("Aún no se han registrado ingresos para este mes.")
-
 
     except Exception as e:
         st.warning("No se pudo calcular el resumen financiero.")
