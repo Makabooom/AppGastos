@@ -214,7 +214,7 @@ with main_tabs[1]:
             alerta_mostrada = False
 
             # 1. Provisiones "se usó" = Sí, pero monto usado = 0
-            usadas_cero = provisiones_mes[(provisiones_mes["se_usó"].str.lower() == "sí") & (provisiones_mes["monto_usado"] == 0)]
+            usadas_cero = provisiones_mes[(provisiones_mes["se_uso"].str.lower() == "si") & (provisiones_mes["monto_usado"] == 0)]
             if not usadas_cero.empty:
                 st.error("⚠️ Hay provisiones marcadas como 'Se usó = Sí' pero sin monto registrado.")
                 alerta_mostrada = True
