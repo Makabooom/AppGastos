@@ -6,49 +6,6 @@ from google_sheets import connect_to_sheet, read_sheet_as_df, write_df_to_sheet
 # === Banner ===
 st.image("banner_makaboom.png", use_container_width=True)
 
-# === Mostrar mes/año actual y botón para avanzar ===
-today = datetime.date.today()
-mes = st.session_state.get("mes_actual", today.month)
-año = st.session_state.get("año_actual", today.year)
-
-col1, col2, col3 = st.columns([1, 1, 2])
-with col1:
-    st.markdown(f"### Mes actual: {mes}")
-with col2:
-    st.markdown(f"### Año actual: {año}")
-with col3:
-    if st.button("📅 Ir a nuevo mes"):
-        nuevo_mes = 1 if mes == 12 else mes + 1
-        nuevo_año = año + 1 if mes == 12 else año
-
-        hojas_a_copiar = ["Ingresos", "Provisiones", "Gastos Fijos", "Ahorros", "Deudas"]
-
-        for hoja in hojas_a_copiar:
-            try:
-                df = read_sheet_as_df(sheet, hoja)
-                if "mes" in df.columns and "año" in df.columns:
-                    df_actual = df[(df["mes"] == mes) & (df["año"] == año)].copy()
-                    if df_actual.empty:
-                        continue
-                    df_actual["mes"] = nuevo_mes
-                    df_actual["año"] = nuevo_año
-
-                    if hoja == "Provisiones" and "se_usó" in df_actual.columns:
-                        df_actual["se_usó"] = "No"
-                    if hoja == "Gastos Fijos" and "estado" in df_actual.columns:
-                        df_actual["estado"] = "Pendiente"
-                    if hoja == "Deudas" and "cuota_mes" in df_actual.columns:
-                        df_actual["cuota_mes"] = 0
-
-                    df_final = pd.concat([df, df_actual], ignore_index=True)
-                    write_df_to_sheet(sheet, hoja, df_final)
-            except Exception as e:
-                st.warning(f"No se pudo copiar {hoja}: {e}")
-
-        st.session_state["mes_actual"] = nuevo_mes
-        st.session_state["año_actual"] = nuevo_año
-        st.success(f"Datos copiados para {nuevo_mes}/{nuevo_año}.")
-
 # === Validación de acceso ===
 def validar_clave():
     if st.session_state.pin_clave == st.secrets["security"]["pin"]:
