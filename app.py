@@ -302,7 +302,7 @@ with main_tabs[3]:
         ])
 
         with rep_tabs[0]:
-            st.markdown("### 💰 Ingresos vs Gastos Mensuales")
+            st.markdown("💰 Ingresos vs Gastos Mensuales")
 
             try:
                 df_ing = read_sheet_as_df(sheet, "Ingresos")
@@ -359,7 +359,107 @@ with main_tabs[3]:
                 st.error("No se pudo generar el gráfico de ingresos vs gastos.")
                 st.text(f"Error: {e}")
 
+        with rep_tabs[1]:
+            st.markdown("📊 Distribución del Gasto por Origen (Mes Actual)")
+            try:
+                # Volvemos a leer hojas por si se entra directamente
+                df_gas = read_sheet_as_df(sheet, "Gastos Fijos")
+                df_deu = read_sheet_as_df(sheet, "Deudas")
+                df_pro = read_sheet_as_df(sheet, "Provisiones")
+                df_aho = read_sheet_as_df(sheet, "Ahorros")
+
+                # Filtro por mes/año
+                gastos_pagados = df_gas[(df_gas["mes"] == mes) & (df_gas["año"] == año) & (df_gas["estado"].str.lower() == "pagado")]
+                deudas_mes = df_deu[(df_deu["mes"] == mes) & (df_deu["año"] == año)]
+                provisiones_mes = df_pro[(df_pro["mes"] == mes) & (df_pro["año"] == año)]
+                ahorros_mes = df_aho[(df_aho["mes"] == mes) & (df_aho["año"] == año)]
+
+                # Cálculos
+                gasto_normal = gastos_pagados["monto"].sum() + (deudas_mes["monto_cuota"] * deudas_mes["cuotas_mes"]).sum()
+                gasto_provisiones = provisiones_mes["monto_usado"].sum()
+                gasto_ahorros = ahorros_mes["monto_retirado"].sum()
+
+                # Preparar gráfico
+                labels = ["Desde Ingresos Normales", "Desde Provisiones", "Desde Ahorros"]
+                valores = [gasto_normal, gasto_provisiones, gasto_ahorros]
+
+                # Si no hay gasto, no mostrar gráfico
+                if sum(valores) == 0:
+                    st.info("No se han registrado gastos este mes.")
+                else:
+                    import matplotlib.pyplot as plt
+                    plt.style.use("dark_background")
+                    fig, ax = plt.subplots()
+                    ax.pie(valores, labels=labels, autopct="%1.1f%%", startangle=90)
+                    ax.set_title("Distribución del Gasto por Origen")
+                    st.pyplot(fig)
+
+            except Exception as e:
+                st.error("No se pudo generar el gráfico de distribución.")
+                st.text(f"Error: {e}")
+
+
+        with rep_tabs[2]:  
+            st.markdown("📆 Evolución Mensual de Ingresos, Gastos y Saldo Real")
+
+            try:
+                df_ing = read_sheet_as_df(sheet, "Ingresos")
+                df_gas = read_sheet_as_df(sheet, "Gastos Fijos")
+                df_deu = read_sheet_as_df(sheet, "Deudas")
+                df_pro = read_sheet_as_df(sheet, "Provisiones")
+                df_aho = read_sheet_as_df(sheet, "Ahorros")
+
+                # Agrupar
+                df_ingresos = df_ing.groupby(["año", "mes"])["monto"].sum().reset_index(name="ingresos")
+                df_gas_pag = df_gas[df_gas["estado"].str.lower() == "pagado"]
+                df_gastos_fijos = df_gas_pag.groupby(["año", "mes"])["monto"].sum().reset_index(name="gastos_fijos")
+
+                df_deu["gasto_deuda"] = df_deu["monto_cuota"] * df_deu["cuotas_mes"]
+                df_gastos_deuda = df_deu.groupby(["año", "mes"])["gasto_deuda"].sum().reset_index(name="deudas")
+
+                df_gastos_prov = df_pro.groupby(["año", "mes"])["monto_usado"].sum().reset_index(name="provisiones_usadas")
+                df_ahorros_ret = df_aho.groupby(["año", "mes"])["monto_retirado"].sum().reset_index(name="ahorros_usados")
+                df_ahorros_ing = df_aho.groupby(["año", "mes"])["monto_ingreso"].sum().reset_index(name="ahorros_guardados")
+                df_prov_guardadas = df_pro.groupby(["año", "mes"])["monto"].sum().reset_index(name="provisiones_guardadas")
+
+                # Merge general
+                df_merge = df_ingresos \
+                    .merge(df_gastos_fijos, on=["año", "mes"], how="left") \
+                    .merge(df_gastos_deuda, on=["año", "mes"], how="left") \
+                    .merge(df_gastos_prov, on=["año", "mes"], how="left") \
+                    .merge(df_ahorros_ret, on=["año", "mes"], how="left") \
+                    .merge(df_ahorros_ing, on=["año", "mes"], how="left") \
+                    .merge(df_prov_guardadas, on=["año", "mes"], how="left")
+
+                df_merge.fillna(0, inplace=True)
+
+                # Cálculos
+                df_merge["gastos_totales"] = df_merge["gastos_fijos"] + df_merge["deudas"] + df_merge["provisiones_usadas"] + df_merge["ahorros_usados"]
+                df_merge["saldo_real"] = df_merge["ingresos"] - df_merge["gastos_totales"] - df_merge["provisiones_guardadas"] - df_merge["ahorros_guardados"]
+                df_merge["periodo"] = df_merge["mes"].astype(str).str.zfill(2) + "/" + df_merge["año"].astype(str)
+
+                # Gráfico
+                import matplotlib.pyplot as plt
+                plt.style.use("dark_background")
+                fig, ax = plt.subplots()
+                ax.plot(df_merge["periodo"], df_merge["ingresos"], label="Ingresos", marker="o", color="#4CAF50")
+                ax.plot(df_merge["periodo"], df_merge["gastos_totales"], label="Gastos Totales", marker="o", color="#F44336")
+                ax.plot(df_merge["periodo"], df_merge["saldo_real"], label="Saldo Disponible Real", marker="o", color="#2196F3")
+
+                ax.set_title("Evolución de Ingresos, Gastos y Saldo Real")
+                ax.set_ylabel("CLP")
+                ax.set_xlabel("Mes/Año")
+                ax.tick_params(axis="x", rotation=45)
+                ax.legend()
+                st.pyplot(fig)
+
+            except Exception as e:
+                st.error("No se pudo generar el gráfico de evolución.")
+                st.text(f"Error: {e}")
+
+
+        with rep_tabs[2]:  
+            st.markdown("📤 Exportar Resumen")           
         
 with main_tabs[4]:
-        st.subheader("🧮 “Simulador”")     
-        #           
+        st.subheader("🧮 “Simulador”")  
