@@ -186,7 +186,7 @@ with main_tabs[0]:
             st.info("Aún no se han registrado ingresos para este mes.")
 
         # === Distribución del gasto mensual por origen ===
-        st.markdown("#### 💸 Distribución del gasto mensual por origen")
+        st.markdown("# 💸 Distribución del gasto mensual por origen")
         col1, col2, col3 = st.columns(3)
         col1.metric("🧾 Desde Ingresos Normales", f"${gasto_normal:,.0f}")
         col2.metric("🏷️ Desde Provisiones", f"${gasto_provisiones:,.0f}")
@@ -206,59 +206,59 @@ with main_tabs[0]:
         st.text(f"Error: {e}")
     
 with main_tabs[1]:
-        st.subheader("🔔 Alertas")
+    st.subheader("🔔 Alertas")
 
-        try:
-            df_ing = read_sheet_as_df(sheet, "Ingresos")
-            df_gastos = read_sheet_as_df(sheet, "Gastos Fijos")
-            df_deudas = read_sheet_as_df(sheet, "Deudas")
-            df_provisiones = read_sheet_as_df(sheet, "Provisiones")
-            df_ahorros = read_sheet_as_df(sheet, "Ahorros")
+    try:
+        df_ing = read_sheet_as_df(sheet, "Ingresos")
+        df_gastos = read_sheet_as_df(sheet, "Gastos Fijos")
+        df_deudas = read_sheet_as_df(sheet, "Deudas")
+        df_provisiones = read_sheet_as_df(sheet, "Provisiones")
+        df_ahorros = read_sheet_as_df(sheet, "Ahorros")
 
-            # === Filtrar por mes y año
-            ing_mes = df_ing[(df_ing["mes"] == mes) & (df_ing["año"] == año)]
-            gastos_pagados = df_gastos[(df_gastos["mes"] == mes) & (df_gastos["año"] == año) & (df_gastos["estado"].str.lower() == "pagado")]
-            deudas_mes = df_deudas[(df_deudas["mes"] == mes) & (df_deudas["año"] == año)]
-            provisiones_mes = df_provisiones[(df_provisiones["mes"] == mes) & (df_provisiones["año"] == año)]
-            ahorros_mes = df_ahorros[(df_ahorros["mes"] == mes) & (df_ahorros["año"] == año)]
+        # === Filtrar por mes y año
+        ing_mes = df_ing[(df_ing["mes"] == mes) & (df_ing["año"] == año)]
+        gastos_pagados = df_gastos[(df_gastos["mes"] == mes) & (df_gastos["año"] == año) & (df_gastos["estado"].str.lower() == "pagado")]
+        deudas_mes = df_deudas[(df_deudas["mes"] == mes) & (df_deudas["año"] == año)]
+        provisiones_mes = df_provisiones[(df_provisiones["mes"] == mes) & (df_provisiones["año"] == año)]
+        ahorros_mes = df_ahorros[(df_ahorros["mes"] == mes) & (df_ahorros["año"] == año)]
 
-            alerta_mostrada = False
+        alerta_mostrada = False
 
-            # 1. Provisiones "se usó" = Sí, pero monto usado = 0
-            usadas_cero = provisiones_mes[(provisiones_mes["se_uso"].str.lower() == "si") & (provisiones_mes["monto_usado"] == 0)]
-            if not usadas_cero.empty:
-                st.error("⚠️ Hay provisiones marcadas como 'Se usó = Sí' pero sin monto registrado.")
-                alerta_mostrada = True
+        # 1. Provisiones "se usó" = Sí, pero monto usado = 0
+        usadas_cero = provisiones_mes[(provisiones_mes["se_uso"].str.lower() == "si") & (provisiones_mes["monto_usado"] == 0)]
+        if not usadas_cero.empty:
+            st.error("⚠️ Hay provisiones marcadas como 'Se usó = Sí' pero sin monto registrado.")
+            alerta_mostrada = True
 
-            # 2. Ingresos < Gasto total
-            ingreso_total = ing_mes["monto"].sum()
-            gasto_normal = gastos_pagados["monto"].sum() + (deudas_mes["monto_cuota"] * deudas_mes["cuotas_mes"]).sum()
-            gasto_provisiones = provisiones_mes["monto_usado"].sum()
-            gasto_ahorros = ahorros_mes["monto_retirado"].sum()
-            gasto_total = gasto_normal + gasto_provisiones + gasto_ahorros
+        # 2. Ingresos < Gasto total
+        ingreso_total = ing_mes["monto"].sum()
+        gasto_normal = gastos_pagados["monto"].sum() + (deudas_mes["monto_cuota"] * deudas_mes["cuotas_mes"]).sum()
+        gasto_provisiones = provisiones_mes["monto_usado"].sum()
+        gasto_ahorros = ahorros_mes["monto_retirado"].sum()
+        gasto_total = gasto_normal + gasto_provisiones + gasto_ahorros
 
-            if ingreso_total < gasto_total:
-                st.error("🚨 Gastaste más de lo que ganaste este mes.")
-                alerta_mostrada = True
+        if ingreso_total < gasto_total:
+            st.error("🚨 Gastaste más de lo que ganaste este mes.")
+            alerta_mostrada = True
 
-            # 3. Deudas con cuotas_mes = 0
-            deudas_no_pagadas = deudas_mes[deudas_mes["cuotas_mes"] == 0]
-            if not deudas_no_pagadas.empty:
-                st.warning("🔔 Hay deudas sin cuotas registradas este mes.")
-                alerta_mostrada = True
+        # 3. Deudas con cuotas_mes = 0
+        deudas_no_pagadas = deudas_mes[deudas_mes["cuotas_mes"] == 0]
+        if not deudas_no_pagadas.empty:
+            st.warning("🔔 Hay deudas sin cuotas registradas este mes.")
+            alerta_mostrada = True
 
-            # 4. Provisiones sin saldo (monto = 0)
-            provisiones_sin_fondo = provisiones_mes[provisiones_mes["monto"] == 0]
-            if not provisiones_sin_fondo.empty:
-                st.warning("💡 Hay provisiones con saldo cero. Podrías no tener cómo cubrir futuros gastos.")
-                alerta_mostrada = True
+        # 4. Provisiones sin saldo (monto = 0)
+        provisiones_sin_fondo = provisiones_mes[provisiones_mes["monto"] == 0]
+        if not provisiones_sin_fondo.empty:
+            st.warning("💡 Hay provisiones con saldo cero. Podrías no tener cómo cubrir futuros gastos.")
+            alerta_mostrada = True
 
-            if not alerta_mostrada:
-                st.success("✨ Todo en orden este mes. ¡Buen trabajo!")
+        if not alerta_mostrada:
+            st.success("✨ Todo en orden este mes. ¡Buen trabajo!")
 
-        except Exception as e:
-            st.warning("No se pudieron evaluar las alertas.")
-            st.text(f"Error: {e}")
+    except Exception as e:
+        st.warning("No se pudieron evaluar las alertas.")
+        st.text(f"Error: {e}")
 
 
 with main_tabs[2]:
@@ -303,232 +303,252 @@ with main_tabs[2]:
 
     
 with main_tabs[3]:
-        st.subheader("📈 Reportes y Análisis")   
-        
-        rep_tabs = st.tabs([
-            "💰 Ingresos vs Gastos",
-            "📊 Distribución por Categoría",
-            "📆 Evolución Mensual",
-            "📤 Exportar Resumen"
-        ])
+    st.subheader("📈 Reportes y Análisis")   
+    
+    rep_tabs = st.tabs([
+        "💰 Ingresos vs Gastos",
+        "📊 Distribución por Categoría",
+        "📆 Evolución Mensual",
+        "📤 Exportar Resumen"
+    ])
 
-        with rep_tabs[0]:
-            st.markdown("💰 Ingresos vs Gastos Mensuales")
+    with rep_tabs[0]:
+        st.markdown("💰 Ingresos vs Gastos Mensuales")
 
-            try:
-                df_ing = read_sheet_as_df(sheet, "Ingresos")
-                df_gas = read_sheet_as_df(sheet, "Gastos Fijos")
-                df_deu = read_sheet_as_df(sheet, "Deudas")
-                df_pro = read_sheet_as_df(sheet, "Provisiones")
-                df_aho = read_sheet_as_df(sheet, "Ahorros")
+        try:
+            df_ing = read_sheet_as_df(sheet, "Ingresos")
+            df_gas = read_sheet_as_df(sheet, "Gastos Fijos")
+            df_deu = read_sheet_as_df(sheet, "Deudas")
+            df_pro = read_sheet_as_df(sheet, "Provisiones")
+            df_aho = read_sheet_as_df(sheet, "Ahorros")
 
-                # Agrupar ingresos
-                df_ingresos = df_ing.groupby(["año", "mes"])["monto"].sum().reset_index(name="ingresos")
+            # Agrupar ingresos
+            df_ingresos = df_ing.groupby(["año", "mes"])["monto"].sum().reset_index(name="ingresos")
 
-                # Gastos fijos pagados
-                df_gas_pag = df_gas[df_gas["estado"].str.lower() == "pagado"]
-                df_gastos_fijos = df_gas_pag.groupby(["año", "mes"])["monto"].sum().reset_index(name="gastos_fijos")
+            # Gastos fijos pagados
+            df_gas_pag = df_gas[df_gas["estado"].str.lower() == "pagado"]
+            df_gastos_fijos = df_gas_pag.groupby(["año", "mes"])["monto"].sum().reset_index(name="gastos_fijos")
 
-                # Deudas = monto_cuota * cuotas_mes
-                df_deu["gasto_deuda"] = df_deu["monto_cuota"] * df_deu["cuotas_mes"]
-                df_gastos_deuda = df_deu.groupby(["año", "mes"])["gasto_deuda"].sum().reset_index(name="deudas")
+            # Deudas = monto_cuota * cuotas_mes
+            df_deu["gasto_deuda"] = df_deu["monto_cuota"] * df_deu["cuotas_mes"]
+            df_gastos_deuda = df_deu.groupby(["año", "mes"])["gasto_deuda"].sum().reset_index(name="deudas")
 
-                # Provisiones usadas
-                df_gastos_prov = df_pro.groupby(["año", "mes"])["monto_usado"].sum().reset_index(name="provisiones_usadas")
+            # Provisiones usadas
+            df_gastos_prov = df_pro.groupby(["año", "mes"])["monto_usado"].sum().reset_index(name="provisiones_usadas")
 
-                # Ahorros retirados
-                df_gastos_aho = df_aho.groupby(["año", "mes"])["monto_retirado"].sum().reset_index(name="ahorros_usados")
+            # Ahorros retirados
+            df_gastos_aho = df_aho.groupby(["año", "mes"])["monto_retirado"].sum().reset_index(name="ahorros_usados")
 
-                # Combinar todo
-                df_merge = df_ingresos \
-                    .merge(df_gastos_fijos, on=["año", "mes"], how="left") \
-                    .merge(df_gastos_deuda, on=["año", "mes"], how="left") \
-                    .merge(df_gastos_prov, on=["año", "mes"], how="left") \
-                    .merge(df_gastos_aho, on=["año", "mes"], how="left")
+            # Combinar todo
+            df_merge = df_ingresos \
+                .merge(df_gastos_fijos, on=["año", "mes"], how="left") \
+                .merge(df_gastos_deuda, on=["año", "mes"], how="left") \
+                .merge(df_gastos_prov, on=["año", "mes"], how="left") \
+                .merge(df_gastos_aho, on=["año", "mes"], how="left")
 
-                # Reemplazar nulos por 0
-                df_merge.fillna(0, inplace=True)
+            # Reemplazar nulos por 0
+            df_merge.fillna(0, inplace=True)
 
-                df_merge["gastos_totales"] = df_merge["gastos_fijos"] + df_merge["deudas"] + df_merge["provisiones_usadas"] + df_merge["ahorros_usados"]
-                df_merge["periodo"] = df_merge["mes"].astype(str).str.zfill(2) + "/" + df_merge["año"].astype(str)
+            df_merge["gastos_totales"] = df_merge["gastos_fijos"] + df_merge["deudas"] + df_merge["provisiones_usadas"] + df_merge["ahorros_usados"]
+            df_merge["periodo"] = df_merge["mes"].astype(str).str.zfill(2) + "/" + df_merge["año"].astype(str)
 
-                # === Gráfico en modo oscuro ===
+            # === Gráfico en modo oscuro ===
+            import matplotlib.pyplot as plt
+
+            plt.style.use("dark_background")
+            fig, ax = plt.subplots()
+            ax.bar(df_merge["periodo"], df_merge["ingresos"], label="Ingresos", color="#4CAF50")
+            ax.bar(df_merge["periodo"], df_merge["gastos_totales"], label="Gastos", color="#F44336", alpha=0.7)
+            ax.set_title("Ingresos vs Gastos Totales por Mes")
+            ax.set_ylabel("CLP")
+            ax.legend()
+            ax.tick_params(axis='x', rotation=45)
+
+            st.pyplot(fig)
+
+        except Exception as e:
+            st.error("No se pudo generar el gráfico de ingresos vs gastos.")
+            st.text(f"Error: {e}")
+
+    with rep_tabs[1]:
+        st.markdown("📊 Distribución del Gasto por Origen (Mes Actual)")
+        try:
+            # Volvemos a leer hojas por si se entra directamente
+            df_gas = read_sheet_as_df(sheet, "Gastos Fijos")
+            df_deu = read_sheet_as_df(sheet, "Deudas")
+            df_pro = read_sheet_as_df(sheet, "Provisiones")
+            df_aho = read_sheet_as_df(sheet, "Ahorros")
+
+            # Filtro por mes/año
+            gastos_pagados = df_gas[(df_gas["mes"] == mes) & (df_gas["año"] == año) & (df_gas["estado"].str.lower() == "pagado")]
+            deudas_mes = df_deu[(df_deu["mes"] == mes) & (df_deu["año"] == año)]
+            provisiones_mes = df_pro[(df_pro["mes"] == mes) & (df_pro["año"] == año)]
+            ahorros_mes = df_aho[(df_aho["mes"] == mes) & (df_aho["año"] == año)]
+
+            # Cálculos
+            gasto_normal = gastos_pagados["monto"].sum() + (deudas_mes["monto_cuota"] * deudas_mes["cuotas_mes"]).sum()
+            gasto_provisiones = provisiones_mes["monto_usado"].sum()
+            gasto_ahorros = ahorros_mes["monto_retirado"].sum()
+
+            # Preparar gráfico
+            labels = ["Desde Ingresos Normales", "Desde Provisiones", "Desde Ahorros"]
+            valores = [gasto_normal, gasto_provisiones, gasto_ahorros]
+
+            # Si no hay gasto, no mostrar gráfico
+            if sum(valores) == 0:
+                st.info("No se han registrado gastos este mes.")
+            else:
                 import matplotlib.pyplot as plt
-
                 plt.style.use("dark_background")
                 fig, ax = plt.subplots()
-                ax.bar(df_merge["periodo"], df_merge["ingresos"], label="Ingresos", color="#4CAF50")
-                ax.bar(df_merge["periodo"], df_merge["gastos_totales"], label="Gastos", color="#F44336", alpha=0.7)
-                ax.set_title("Ingresos vs Gastos Totales por Mes")
-                ax.set_ylabel("CLP")
-                ax.legend()
-                ax.tick_params(axis='x', rotation=45)
-
+                ax.pie(valores, labels=labels, autopct="%1.1f%%", startangle=90)
+                ax.set_title("Distribución del Gasto por Origen")
                 st.pyplot(fig)
 
-            except Exception as e:
-                st.error("No se pudo generar el gráfico de ingresos vs gastos.")
-                st.text(f"Error: {e}")
+        except Exception as e:
+            st.error("No se pudo generar el gráfico de distribución.")
+            st.text(f"Error: {e}")
 
-        with rep_tabs[1]:
-            st.markdown("📊 Distribución del Gasto por Origen (Mes Actual)")
-            try:
-                # Volvemos a leer hojas por si se entra directamente
-                df_gas = read_sheet_as_df(sheet, "Gastos Fijos")
-                df_deu = read_sheet_as_df(sheet, "Deudas")
-                df_pro = read_sheet_as_df(sheet, "Provisiones")
-                df_aho = read_sheet_as_df(sheet, "Ahorros")
 
-                # Filtro por mes/año
-                gastos_pagados = df_gas[(df_gas["mes"] == mes) & (df_gas["año"] == año) & (df_gas["estado"].str.lower() == "pagado")]
-                deudas_mes = df_deu[(df_deu["mes"] == mes) & (df_deu["año"] == año)]
-                provisiones_mes = df_pro[(df_pro["mes"] == mes) & (df_pro["año"] == año)]
-                ahorros_mes = df_aho[(df_aho["mes"] == mes) & (df_aho["año"] == año)]
+    with rep_tabs[2]:  
+        st.markdown("📆 Evolución Mensual de Ingresos, Gastos y Saldo Real")
 
-                # Cálculos
-                gasto_normal = gastos_pagados["monto"].sum() + (deudas_mes["monto_cuota"] * deudas_mes["cuotas_mes"]).sum()
-                gasto_provisiones = provisiones_mes["monto_usado"].sum()
-                gasto_ahorros = ahorros_mes["monto_retirado"].sum()
+        try:
+            df_ing = read_sheet_as_df(sheet, "Ingresos")
+            df_gas = read_sheet_as_df(sheet, "Gastos Fijos")
+            df_deu = read_sheet_as_df(sheet, "Deudas")
+            df_pro = read_sheet_as_df(sheet, "Provisiones")
+            df_aho = read_sheet_as_df(sheet, "Ahorros")
 
-                # Preparar gráfico
-                labels = ["Desde Ingresos Normales", "Desde Provisiones", "Desde Ahorros"]
-                valores = [gasto_normal, gasto_provisiones, gasto_ahorros]
+            # Agrupar
+            df_ingresos = df_ing.groupby(["año", "mes"])["monto"].sum().reset_index(name="ingresos")
+            df_gas_pag = df_gas[df_gas["estado"].str.lower() == "pagado"]
+            df_gastos_fijos = df_gas_pag.groupby(["año", "mes"])["monto"].sum().reset_index(name="gastos_fijos")
 
-                # Si no hay gasto, no mostrar gráfico
-                if sum(valores) == 0:
-                    st.info("No se han registrado gastos este mes.")
+            df_deu["gasto_deuda"] = df_deu["monto_cuota"] * df_deu["cuotas_mes"]
+            df_gastos_deuda = df_deu.groupby(["año", "mes"])["gasto_deuda"].sum().reset_index(name="deudas")
+
+            df_gastos_prov = df_pro.groupby(["año", "mes"])["monto_usado"].sum().reset_index(name="provisiones_usadas")
+            df_ahorros_ret = df_aho.groupby(["año", "mes"])["monto_retirado"].sum().reset_index(name="ahorros_usados")
+            df_ahorros_ing = df_aho.groupby(["año", "mes"])["monto_ingreso"].sum().reset_index(name="ahorros_guardados")
+            df_prov_guardadas = df_pro.groupby(["año", "mes"])["monto"].sum().reset_index(name="provisiones_guardadas")
+
+            # Merge general
+            df_merge = df_ingresos \
+                .merge(df_gastos_fijos, on=["año", "mes"], how="left") \
+                .merge(df_gastos_deuda, on=["año", "mes"], how="left") \
+                .merge(df_gastos_prov, on=["año", "mes"], how="left") \
+                .merge(df_ahorros_ret, on=["año", "mes"], how="left") \
+                .merge(df_ahorros_ing, on=["año", "mes"], how="left") \
+                .merge(df_prov_guardadas, on=["año", "mes"], how="left")
+
+            df_merge.fillna(0, inplace=True)
+
+            # Cálculos
+            df_merge["gastos_totales"] = df_merge["gastos_fijos"] + df_merge["deudas"] + df_merge["provisiones_usadas"] + df_merge["ahorros_usados"]
+            df_merge["saldo_real"] = df_merge["ingresos"] - df_merge["gastos_totales"] - df_merge["provisiones_guardadas"] - df_merge["ahorros_guardados"]
+            df_merge["periodo"] = df_merge["mes"].astype(str).str.zfill(2) + "/" + df_merge["año"].astype(str)
+
+            # Gráfico
+            import matplotlib.pyplot as plt
+            plt.style.use("dark_background")
+            fig, ax = plt.subplots()
+            ax.plot(df_merge["periodo"], df_merge["ingresos"], label="Ingresos", marker="o", color="#4CAF50")
+            ax.plot(df_merge["periodo"], df_merge["gastos_totales"], label="Gastos Totales", marker="o", color="#F44336")
+            ax.plot(df_merge["periodo"], df_merge["saldo_real"], label="Saldo Disponible Real", marker="o", color="#2196F3")
+
+            ax.set_title("Evolución de Ingresos, Gastos y Saldo Real")
+            ax.set_ylabel("CLP")
+            ax.set_xlabel("Mes/Año")
+            ax.tick_params(axis="x", rotation=45)
+            ax.legend()
+            st.pyplot(fig)
+
+        except Exception as e:
+            st.error("No se pudo generar el gráfico de evolución.")
+            st.text(f"Error: {e}")
+
+
+    with rep_tabs[3]:  
+        st.markdown(" 📤 Exportar tus datos")
+
+        try:
+            hojas = ["Ingresos", "Gastos Fijos", "Deudas", "Provisiones", "Ahorros", "Reservas Familiares"]
+            dfs_mes = {}
+            dfs_año = {}
+
+            for hoja in hojas:
+                df = df_hojas.get(hoja, pd.DataFrame())
+
+                if "mes" in df.columns and "año" in df.columns:
+                    df_mes = df[(df["mes"] == mes) & (df["año"] == año)]
+                    df_año = df[df["año"] == año]
                 else:
-                    import matplotlib.pyplot as plt
-                    plt.style.use("dark_background")
-                    fig, ax = plt.subplots()
-                    ax.pie(valores, labels=labels, autopct="%1.1f%%", startangle=90)
-                    ax.set_title("Distribución del Gasto por Origen")
-                    st.pyplot(fig)
+                    df_mes = df.copy()
+                    df_año = df.copy()
 
-            except Exception as e:
-                st.error("No se pudo generar el gráfico de distribución.")
-                st.text(f"Error: {e}")
+                dfs_mes[hoja] = df_mes
+                dfs_año[hoja] = df_año
 
+            # === Botón para descargar resumen mensual
+            if st.button("📥 Descargar resumen mensual en Excel"):
+                output = io.BytesIO()
+                wb = Workbook()
+                for nombre, df in dfs_mes.items():
+                    ws = wb.create_sheet(title=nombre[:31])
+                    for r in dataframe_to_rows(df, index=False, header=True):
+                        ws.append(r)
+                wb.remove(wb["Sheet"])
+                wb.save(output)
+                st.download_button(
+                    label="⬇️ Descargar archivo mensual",
+                    data=output.getvalue(),
+                    file_name=f"Resumen_{mes}_{año}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
 
-        with rep_tabs[2]:  
-            st.markdown("📆 Evolución Mensual de Ingresos, Gastos y Saldo Real")
+            # === Botón para descargar resumen anual
+            if st.button("📥 Descargar histórico anual en Excel"):
+                output = io.BytesIO()
+                wb = Workbook()
+                for nombre, df in dfs_año.items():
+                    ws = wb.create_sheet(title=nombre[:31])
+                    for r in dataframe_to_rows(df, index=False, header=True):
+                        ws.append(r)
+                wb.remove(wb["Sheet"])
+                wb.save(output)
+                st.download_button(
+                    label="⬇️ Descargar archivo anual",
+                    data=output.getvalue(),
+                    file_name=f"Resumen_Anual_{año}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
 
-            try:
-                df_ing = read_sheet_as_df(sheet, "Ingresos")
-                df_gas = read_sheet_as_df(sheet, "Gastos Fijos")
-                df_deu = read_sheet_as_df(sheet, "Deudas")
-                df_pro = read_sheet_as_df(sheet, "Provisiones")
-                df_aho = read_sheet_as_df(sheet, "Ahorros")
-
-                # Agrupar
-                df_ingresos = df_ing.groupby(["año", "mes"])["monto"].sum().reset_index(name="ingresos")
-                df_gas_pag = df_gas[df_gas["estado"].str.lower() == "pagado"]
-                df_gastos_fijos = df_gas_pag.groupby(["año", "mes"])["monto"].sum().reset_index(name="gastos_fijos")
-
-                df_deu["gasto_deuda"] = df_deu["monto_cuota"] * df_deu["cuotas_mes"]
-                df_gastos_deuda = df_deu.groupby(["año", "mes"])["gasto_deuda"].sum().reset_index(name="deudas")
-
-                df_gastos_prov = df_pro.groupby(["año", "mes"])["monto_usado"].sum().reset_index(name="provisiones_usadas")
-                df_ahorros_ret = df_aho.groupby(["año", "mes"])["monto_retirado"].sum().reset_index(name="ahorros_usados")
-                df_ahorros_ing = df_aho.groupby(["año", "mes"])["monto_ingreso"].sum().reset_index(name="ahorros_guardados")
-                df_prov_guardadas = df_pro.groupby(["año", "mes"])["monto"].sum().reset_index(name="provisiones_guardadas")
-
-                # Merge general
-                df_merge = df_ingresos \
-                    .merge(df_gastos_fijos, on=["año", "mes"], how="left") \
-                    .merge(df_gastos_deuda, on=["año", "mes"], how="left") \
-                    .merge(df_gastos_prov, on=["año", "mes"], how="left") \
-                    .merge(df_ahorros_ret, on=["año", "mes"], how="left") \
-                    .merge(df_ahorros_ing, on=["año", "mes"], how="left") \
-                    .merge(df_prov_guardadas, on=["año", "mes"], how="left")
-
-                df_merge.fillna(0, inplace=True)
-
-                # Cálculos
-                df_merge["gastos_totales"] = df_merge["gastos_fijos"] + df_merge["deudas"] + df_merge["provisiones_usadas"] + df_merge["ahorros_usados"]
-                df_merge["saldo_real"] = df_merge["ingresos"] - df_merge["gastos_totales"] - df_merge["provisiones_guardadas"] - df_merge["ahorros_guardados"]
-                df_merge["periodo"] = df_merge["mes"].astype(str).str.zfill(2) + "/" + df_merge["año"].astype(str)
-
-                # Gráfico
-                import matplotlib.pyplot as plt
-                plt.style.use("dark_background")
-                fig, ax = plt.subplots()
-                ax.plot(df_merge["periodo"], df_merge["ingresos"], label="Ingresos", marker="o", color="#4CAF50")
-                ax.plot(df_merge["periodo"], df_merge["gastos_totales"], label="Gastos Totales", marker="o", color="#F44336")
-                ax.plot(df_merge["periodo"], df_merge["saldo_real"], label="Saldo Disponible Real", marker="o", color="#2196F3")
-
-                ax.set_title("Evolución de Ingresos, Gastos y Saldo Real")
-                ax.set_ylabel("CLP")
-                ax.set_xlabel("Mes/Año")
-                ax.tick_params(axis="x", rotation=45)
-                ax.legend()
-                st.pyplot(fig)
-
-            except Exception as e:
-                st.error("No se pudo generar el gráfico de evolución.")
-                st.text(f"Error: {e}")
-
-
-        with rep_tabs[3]:  
-            st.markdown("### 📤 Exportar tus datos")
-
-            try:
-                hojas = ["Ingresos", "Gastos Fijos", "Deudas", "Provisiones", "Ahorros", "Reservas Familiares"]
-                dfs_mes = {}
-                dfs_año = {}
-
-                for hoja in hojas:
-                    df = df_hojas.get(hoja, pd.DataFrame())
-
-                    if "mes" in df.columns and "año" in df.columns:
-                        df_mes = df[(df["mes"] == mes) & (df["año"] == año)]
-                        df_año = df[df["año"] == año]
-                    else:
-                        df_mes = df.copy()
-                        df_año = df.copy()
-
-                    dfs_mes[hoja] = df_mes
-                    dfs_año[hoja] = df_año
-
-                # === Botón para descargar resumen mensual
-                if st.button("📥 Descargar resumen mensual en Excel"):
-                    output = io.BytesIO()
-                    wb = Workbook()
-                    for nombre, df in dfs_mes.items():
-                        ws = wb.create_sheet(title=nombre[:31])
-                        for r in dataframe_to_rows(df, index=False, header=True):
-                            ws.append(r)
-                    wb.remove(wb["Sheet"])
-                    wb.save(output)
-                    st.download_button(
-                        label="⬇️ Descargar archivo mensual",
-                        data=output.getvalue(),
-                        file_name=f"Resumen_{mes}_{año}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    )
-
-                # === Botón para descargar resumen anual
-                if st.button("📥 Descargar histórico anual en Excel"):
-                    output = io.BytesIO()
-                    wb = Workbook()
-                    for nombre, df in dfs_año.items():
-                        ws = wb.create_sheet(title=nombre[:31])
-                        for r in dataframe_to_rows(df, index=False, header=True):
-                            ws.append(r)
-                    wb.remove(wb["Sheet"])
-                    wb.save(output)
-                    st.download_button(
-                        label="⬇️ Descargar archivo anual",
-                        data=output.getvalue(),
-                        file_name=f"Resumen_Anual_{año}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    )
-
-            except Exception as e:
-                st.error("No se pudo generar el archivo para exportar.")
-                st.text(f"Error: {e}")
-
-
+        except Exception as e:
+            st.error("No se pudo generar el archivo para exportar.")
+            st.text(f"Error: {e}")
         
 with main_tabs[4]:
-        st.subheader("🧮 “Simulador”")  
+    st.subheader("🧮 Simulador de Próximo Mes")
+
+    # Calcular próximo mes
+    nuevo_mes, nuevo_año = obtener_mes_siguiente(mes, año)
+    st.markdown(f" Simulación para: **{nuevo_mes}/{nuevo_año}**")
+
+    # Entradas del usuario
+    ingreso_simulado = st.number_input("💰 Ingreso estimado", min_value=0, value=500000, step=10000)
+    gasto_estimado = st.number_input("💸 Gastos fijos esperados", min_value=0, value=300000, step=10000)
+    provisiones_estimadas = st.number_input("🏷️ Provisiones a guardar", min_value=0, value=50000, step=10000)
+    ahorro_estimado = st.number_input("🏦 Ahorro previsto", min_value=0, value=30000, step=10000)
+    deuda_estimadas = st.number_input("💳 Pago de deudas estimado", min_value=0, value=40000, step=10000)
+
+    # Cálculos
+    gasto_total = gasto_estimado + deuda_estimadas
+    saldo_proyectado = ingreso_simulado - gasto_total - provisiones_estimadas - ahorro_estimado
+
+    # Métricas
+    st.markdown(" 📊 Resultado Proyectado")
+    col1, col2 = st.columns(2)
+    col1.metric("💸 Gasto Total", f"${gasto_total:,.0f}")
+    col2.metric("🧮 Saldo Disponible", f"${saldo_proyectado:,.0f}")
+
