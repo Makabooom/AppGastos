@@ -84,7 +84,17 @@ main_tabs = st.tabs([
     "📈 Reportes y Análisis"
 ])
 
+#Resumen General
 with main_tabs[0]:
+    st.subheader("📊 Resumen General")
+
+#Alertas
+with main_tabs[1]:
+    st.subheader("🔔 Alertas")
+
+#Datos Detallados
+with main_tabs[2]:
+    st.subheader("📋 Datos Detallados")
     sub_tabs = st.tabs([
         "📥 Ingresos", 
         "🧾 Provisiones", 
@@ -122,3 +132,8 @@ with main_tabs[0]:
             else:
                 write_df_to_sheet(sheet, "Cuentas", edited_cuentas)
                 st.success("Cuentas actualizadas correctamente.")
+
+
+#Reportes y Análisis
+with main_tabs[3]:
+    st.subheader("📈 Reportes y Análisis")
